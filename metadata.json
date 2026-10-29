@@ -1,0 +1,6 @@
+{
+  "name": "SoulDolls RPG",
+  "description": "A 3D Action RPG with objective-based combat, classic MMORPG HUD, quests, NPCs, and inventory.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

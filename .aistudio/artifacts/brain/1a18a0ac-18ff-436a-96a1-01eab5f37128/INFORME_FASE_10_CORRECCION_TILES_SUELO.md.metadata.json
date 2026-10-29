@@ -1,0 +1,5 @@
+{
+  "summary":  "Informe técnico de corrección de tiles de suelo y renderizado de terreno en SoulDolls (Luminati Engine).\nExplica la eliminación del efecto damero (checkerboarding) y flatShading, la nueva textura de césped orgánico pixel-art sin ruido estático, los adoquines conformantes a las normales del terreno con transparencia pura y la adición de claros de tierra batida.",
+  "updatedAt":  "2026-10-29T13:53:52.648758781Z",
+  "userFacing":  true
+}

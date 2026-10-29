@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Base */
+    --s-base-1: #14101C;
+    --s-base-2: #2A1F2D;
+    --s-base-bronze: #8A6A3B;
+    --s-base-gold: #E8B84A;
+    --s-base-cream: #F2E6C9;
+    --s-base-cyan: #5FE3D2;
+    --s-base-violet: #9B6BFF;
+    --s-base-crimson: #C2234B;
+    --s-base-pink: #FF8FB8;
+
+    /* Neutrals */
+    --s-black: #000000;
+    --s-abyss: #0B080E;
+    --s-ash: #3D3242;
+    --s-stone: #6B5C70;
+    --s-bone: #A89BA8;
+    --s-white: #FFF9F0;
+
+    /* Woods & Bronze */
+    --s-oak: #3B2B1A;
+    --s-umber: #5C4227;
+    --s-tarnished: #A67F46;
+    --s-brass: #F4D073;
+    --s-palegold: #FCEDB8;
+    --s-rust: #6E3A1B;
+    --s-leather: #7A4F2E;
+
+    /* Reds & Pinks */
+    --s-blood-dark: #4A0B18;
+    --s-blood-moon: #6E0C25;
+    --s-rosewood: #911934;
+    --s-ruby: #E23E66;
+    --s-coral: #F06060;
+    --s-peach: #FFB3CE;
+    --s-pallerose: #FFD6E4;
+    --s-cherry: #FFEBF2;
+
+    /* Violets */
+    --s-nightshade: #24123B;
+    --s-amethyst: #3C1C6E;
+    --s-purple: #5E329E;
+    --s-lilac: #7F4AD6;
+    --s-orchid: #B691FF;
+    --s-ghost: #D1BEFF;
+    --s-lavender: #F4EFFF;
+    --s-hexpurple: #6C3B8A;
+
+    /* Cyans & Nature */
+    --s-slate: #1B2A2A;
+    --s-deepabyss: #123F3C;
+    --s-teal: #1F6B65;
+    --s-aqua: #32A89D;
+    --s-mint: #85EADD;
+    --s-ice: #B8F4EE;
+    --s-frosted: #D9FBF7;
+    --s-emerald: #2D8C55;
+
+    /* Environment */
+    --s-pitchgreen: #10160D;
+    --s-forestgreen: #2A3D24;
+    --s-olivedrab: #4C5C36;
+    --s-mossgreen: #7A8B3F;
+    --s-dirtbrown: #453322;
+    --s-stoneshadow: #2F3640;
+    --s-stonemid: #4B5563;
+    --s-stonehighlight: #6B778C;
+    --s-sand: #C2A77C;
+    --s-woodhighlight: #9E7D5A;
+
+    /* UI Accents */
+    --s-danger: #FF0000;
+    --s-warning: #FFAA00;
+    --s-success: #00E639;
+    --s-manablue: #0077FF;
+    --s-poison: #8F00FF;
+    --s-goldacc: #FFD700;
+    --s-purewhite: #FFFFFF;
+    --s-deepdark: #050505;
+  }
+
+  body {
+    background-color: var(--s-abyss);
+    color: var(--s-white);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    image-rendering: pixelated;
+    overflow: hidden;
+    user-select: none;
+  }
+}
+
+/* Retro Pixel Art UI Utility Classes (No Gradients, No Blur, No 3D Shadows) */
+.pixel-box {
+  background-color: var(--s-base-1);
+  border: 2px solid var(--s-base-bronze);
+  box-shadow: 4px 4px 0px var(--s-black);
+}
+
+.pixel-box-sm {
+  background-color: var(--s-base-1);
+  border: 2px solid var(--s-stone);
+  box-shadow: 2px 2px 0px var(--s-black);
+}
+
+.pixel-button {
+  background-color: var(--s-base-2);
+  border: 2px solid var(--s-base-gold);
+  color: var(--s-white);
+  box-shadow: 2px 2px 0px var(--s-black);
+  transition: none;
+}
+
+.pixel-button:hover {
+  background-color: var(--s-base-bronze);
+  border-color: var(--s-purewhite);
+}
+
+.pixel-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
