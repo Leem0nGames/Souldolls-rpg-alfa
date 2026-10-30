@@ -10,6 +10,7 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "assets:optimize": "tsx scripts/optimize-assets.ts",
+    "assets:normalize": "tsx scripts/normalize-sprite-sheet.ts",
     "test": "tsx test_qa_suite.ts"
   },
   "dependencies": {

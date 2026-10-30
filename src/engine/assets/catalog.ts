@@ -19,8 +19,8 @@ export const ASSET_CATALOG: Record<string, SpriteAssetDefinition> = {
       roughness: 0.85,
       metalness: 0.05,
     },
-    frameWidth: 173.5,
-    frameHeight: 258.5,
+    frameWidth: 174,
+    frameHeight: 259,
     animation: {
       cols: 4,
       rows: 4,
