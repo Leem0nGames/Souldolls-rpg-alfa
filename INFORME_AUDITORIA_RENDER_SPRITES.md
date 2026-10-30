@@ -56,8 +56,27 @@
 - **51/51 → 53/53 PASS** (K5, K6).
 - `tsc --noEmit`: ✅ · `vite build`: ✅ 1.49 s.
 
-## 5. Recomendaciones futuras (no bloqueantes)
+## 5. Instancing — Implementación (2026-10-30)
+
+### Nuevo `InstancedBillboard` (`src/engine/graphics/InstancedBillboard.ts`)
+
+- Batches N billboards con geometría/material compartidos en un único `THREE.InstancedMesh`.
+- Semántica: `instanceCount` en constructor + `add(position, scale)` secuencial → `mesh.setMatrixAt`.
+- `update(cameraYaw)`: reorigen TODAS las instancias con la quaternion cilíndrica (`yaw + π`) y sube `instanceMatrix.needsUpdate`.
+- `frustumCulled = false` (los billboards cilíndricos nunca oclupan significativamente).
+
+### Integración en `Environment`
+
+- Flores de glade (batch por textura: roja/amarilla/cian) → 3 batches instanciados.
+- Setas (18) → 1 batch instanciado.
+- `update()` y `dispose()` gestionan `instancedBillboards`.
+
+### QA (sección K)
+
+- **K7: InstancedBillboard** — count=2, matrices de posición coherentes, update idempotente. ✅ PASS.
+
+## 6. Recomendaciones futuras (no bloqueantes)
 1. Re-exportar la hoja AI con **grid entero** (p. ej. frames de 174×259 px) para eliminar la causa raíz del bleed.
-2. `InstancedMesh` para flores/helechos si la vegetación escala ×3.
+2. ~~Instancing~~ **COMPLETADO** (flores + setas vía `InstancedBillboard`).
 3. Considerar `NearestMipmapLinear` solo en texturas de suelo/paredes para estabilizar vistas lejanas.
 4. Evaluar `OnBeforeRender` per-frame updates UV si el número de billboards animados crece (hoy el coste es trivial).

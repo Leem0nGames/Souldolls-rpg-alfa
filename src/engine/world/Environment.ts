@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Terrain } from './Terrain';
 import { TextureGenerator } from '../graphics/TextureGenerator';
 import { BillboardProp } from '../graphics/BillboardProp';
+import { InstancedBillboard } from '../graphics/InstancedBillboard';
 import { spriteLoader } from '../assets/SpriteLoader';
 import { packTextureLoader } from '../assets/PackTextureLoader';
 import { PALETTE } from '../graphics/Palette';
@@ -24,6 +25,7 @@ export class Environment {
   public group: THREE.Group;
   public obstacles: WorldObstacle[] = [];
   public billboardProps: BillboardProp[] = [];
+  public instancedBillboards: InstancedBillboard[] = [];
   public campfireLight?: THREE.PointLight;
   public outpostLight?: THREE.PointLight;
   public pondWaterMat?: THREE.MeshStandardMaterial;
@@ -782,8 +784,9 @@ export class Environment {
     const mushroomTex = spriteLoader.getTexture('mushroom_forest');
     const fernTex = spriteLoader.getTexture('fern_shrub');
 
-    // 1. Wildflowers scattered in grassy glades (cylindrical billboards)
+    // 1. Wildflowers scattered in grassy glades (instanced cylindrical billboards)
     const flowerCount = 35;
+    const flowerBuckets = new Map<THREE.Texture, { positions: THREE.Vector3[]; scales: number[] }>();
     for (let i = 0; i < flowerCount; i++) {
       const angle = (i / flowerCount) * Math.PI * 2 + Math.cos(i * 2.1) * 0.3;
       const dist = 5 + (i % 6) * 4.5;
@@ -794,41 +797,39 @@ export class Environment {
 
       const y = terrain.getHeightAt(x, z);
       const texChoice = i % 3 === 0 ? redFlowerTex : i % 3 === 1 ? yellowFlowerTex : cyanFlowerTex;
-
-      const flower = new BillboardProp({
-        texture: texChoice,
-        width: 0.7,
-        height: 0.7,
-        type: 'cylindrical',
-        castShadow: true,
-      });
-
-      flower.mesh.position.set(x, y, z);
-      this.group.add(flower.mesh);
-      this.billboardProps.push(flower);
+      const bucket = flowerBuckets.get(texChoice) ?? { positions: [], scales: [] };
+      bucket.positions.push(new THREE.Vector3(x, y, z));
+      bucket.scales.push(0.7);
+      flowerBuckets.set(texChoice, bucket);
+    }
+    for (const [tex, bucket] of flowerBuckets) {
+      const instanced = new InstancedBillboard(
+        { texture: tex, width: 0.7, height: 0.7, castShadow: true },
+        bucket.positions.length
+      );
+      for (let i = 0; i < bucket.positions.length; i++) {
+        instanced.add(bucket.positions[i], bucket.scales[i]);
+      }
+      this.group.add(instanced.mesh);
+      this.instancedBillboards.push(instanced);
     }
 
-    // 2. Red spotted mushrooms under tree shade
+    // 2. Red spotted mushrooms under tree shade (single instanced batch)
     const mushroomCount = 18;
+    const mushroomInstanced = new InstancedBillboard(
+      { texture: mushroomTex, width: 0.65, height: 0.65, castShadow: true },
+      mushroomCount
+    );
     for (let i = 0; i < mushroomCount; i++) {
       const angle = (i / mushroomCount) * Math.PI * 2 + Math.sin(i * 1.5) * 0.5;
       const dist = 8 + (i % 4) * 6.5;
       const x = Math.cos(angle) * dist;
       const z = Math.sin(angle) * dist;
-
       const y = terrain.getHeightAt(x, z);
-      const mushroom = new BillboardProp({
-        texture: mushroomTex,
-        width: 0.65,
-        height: 0.65,
-        type: 'cylindrical',
-        castShadow: true,
-      });
-
-      mushroom.mesh.position.set(x, y, z);
-      this.group.add(mushroom.mesh);
-      this.billboardProps.push(mushroom);
+      mushroomInstanced.add(new THREE.Vector3(x, y, z), 0.65);
     }
+    this.group.add(mushroomInstanced.mesh);
+    this.instancedBillboards.push(mushroomInstanced);
 
     // 3. Dense Ferns and Grass Tufts (crossed-planes X-billboards)
     const fernCount = 24;
@@ -861,6 +862,9 @@ export class Environment {
     this.billboardProps.forEach((prop) => {
       prop.update(cameraYaw);
     });
+    this.instancedBillboards.forEach((ib) => {
+      ib.update(cameraYaw);
+    });
 
     // Animate water pond texture UV offset for gentle liquid ripples
     if (this.pondWaterMat && this.pondWaterMat.map) {
@@ -879,6 +883,8 @@ export class Environment {
 
   public dispose() {
     this.billboardProps.forEach((prop) => prop.dispose());
+    this.instancedBillboards.forEach((ib) => ib.dispose());
+    this.instancedBillboards = [];
     this.group.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.geometry.dispose();

@@ -7,7 +7,8 @@ import { BillboardCharacter } from './src/engine/graphics/BillboardCharacter';
 import { WEBP_VARIANTS } from './src/engine/assets/webpVariants.generated';
 import { resolveSpriteCandidates } from './src/engine/assets/optimizedSrc';
 import { LightingDirector, DEFAULT_LIGHTING_CONFIG } from './src/engine/graphics/LightingDirector';
-import { DEFAULT_POSTFX_CONFIG } from './src/engine/graphics/PostFx';
+import { PostFxPipeline, DEFAULT_POSTFX_CONFIG } from './src/engine/graphics/PostFx';
+import { InstancedBillboard } from './src/engine/graphics/InstancedBillboard';
 import { Terrain } from './src/engine/world/Terrain';
 import { SPELL_CATALOG } from './src/engine/magic/SpellData';
 import { Player } from './src/engine/entities/Player';
@@ -805,6 +806,41 @@ async function runQASuite() {
     'K6: Inset anti-bleed aplicado a la lattice UV',
     'K',
     `repeat=${repeatU.toFixed(6)} (esperado ${expectedU.toFixed(6)}) con inset 0.75px sobre hoja de 128px de ancho.`
+  );
+
+  // ----------------------------------------------------
+  // PRUEBAS K: INSTANCING DE BILLBOARDS
+  // ----------------------------------------------------
+  const instancedScene = new THREE.Scene();
+  const instancedBillboard = new InstancedBillboard({
+    texture: spriteLoader.getTexture('wildflower_red'),
+    width: 0.7,
+    height: 0.7,
+    castShadow: true,
+  }, 2);
+  instancedBillboard.add(new THREE.Vector3(1, 2, -3), 0.7);
+  instancedBillboard.add(new THREE.Vector3(-2, 1.5, 4), 0.7);
+  instancedBillboard.update(0.9);
+  const instancedCount = instancedBillboard.mesh.count;
+  const instMatrix = instancedBillboard.mesh.instanceMatrix;
+  const instData = instMatrix.array as Float32Array;
+  const firstInstanceValid =
+    Math.abs(instData[12] - 1) < 1e-6 &&
+    Math.abs(instData[13] - 2) < 1e-6 &&
+    Math.abs(instData[14] - -3) < 1e-6;
+  const rotationElementBefore = instData[0];
+  instancedBillboard.update(0.9);
+  const rotationElementAfter = instData[0];
+  instancedBillboard.dispose();
+  const instancedOk =
+    instancedCount === 2 &&
+    firstInstanceValid &&
+    rotationElementBefore === rotationElementAfter;
+  assert(
+    instancedOk,
+    'K7: InstancedBillboard gestiona instancias y matrices en batch',
+    'K',
+    `InstancedMesh con ${instancedCount} instancias; matrices coherentes tras update(cameraYaw=0.9).`
   );
 
   console.log('\n====================================================');
