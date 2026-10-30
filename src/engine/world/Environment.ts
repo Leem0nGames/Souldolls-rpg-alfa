@@ -44,6 +44,7 @@ export class Environment {
     this.spawnFencesAndProps(terrain);
     this.spawnRuins(terrain);
     this.spawnBillboardDecorations(terrain);
+    this.spawnRuralHub(terrain);
   }
 
   /**
@@ -849,6 +850,239 @@ export class Environment {
       });
 
       fern.mesh.position.set(x, y, z);
+      this.group.add(fern.mesh);
+      this.billboardProps.push(fern);
+    }
+  }
+
+  /**
+   * Builds a 3D medieval fantasy structure: cobblestone walls, wooden corner
+   * beams, pitched shingle roof, gable, entrance door, windows and chimney.
+   * Reusable for the outpost, the vast mansion and the small village cottages.
+   */
+  private buildFantasyHouse(
+    buildingGroup: THREE.Group,
+    width: number,
+    depth: number,
+    wallHeight: number,
+    roofHeight: number,
+    woodTex: THREE.Texture,
+    roofTex: THREE.Texture,
+    wallMat: THREE.MeshStandardMaterial,
+    woodMat: THREE.MeshStandardMaterial,
+    roofMat: THREE.MeshStandardMaterial
+  ): void {
+    // 1. Cobblestone Foundation & Main Walls
+    const wallGeo = new THREE.BoxGeometry(width, wallHeight, depth);
+    const walls = new THREE.Mesh(wallGeo, wallMat);
+    walls.position.y = wallHeight / 2;
+    walls.castShadow = true;
+    walls.receiveShadow = true;
+    buildingGroup.add(walls);
+
+    // 2. Wooden Corner Timber Beams
+    const beamSize = 0.4;
+    const corners = [
+      { x: -width / 2, z: -depth / 2 },
+      { x: width / 2, z: -depth / 2 },
+      { x: -width / 2, z: depth / 2 },
+      { x: width / 2, z: depth / 2 },
+    ];
+    corners.forEach((c) => {
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(beamSize, wallHeight + 0.1, beamSize), woodMat);
+      beam.position.set(c.x, wallHeight / 2, c.z);
+      beam.castShadow = true;
+      beam.receiveShadow = true;
+      buildingGroup.add(beam);
+    });
+
+    // 3. Pitched Roof (3D Gable Roof with angled slabs)
+    const roofHeightLocal = roofHeight;
+    const roofOverhang = 0.6;
+    const roofSlopeWidth = Math.sqrt((width / 2 + roofOverhang) ** 2 + roofHeightLocal ** 2);
+    const slabGeo = new THREE.BoxGeometry(roofSlopeWidth, 0.25, depth + 1.2);
+    const leftSlab = new THREE.Mesh(slabGeo, roofMat);
+    const slopeAngle = Math.atan2(roofHeightLocal, width / 2 + roofOverhang);
+    leftSlab.position.set(-(width / 4 + roofOverhang / 2), wallHeight + roofHeightLocal / 2, 0);
+    leftSlab.rotation.z = slopeAngle;
+    leftSlab.castShadow = true;
+    leftSlab.receiveShadow = true;
+    buildingGroup.add(leftSlab);
+    const rightSlab = new THREE.Mesh(slabGeo, roofMat);
+    rightSlab.position.set(width / 4 + roofOverhang / 2, wallHeight + roofHeightLocal / 2, 0);
+    rightSlab.rotation.z = -slopeAngle;
+    rightSlab.castShadow = true;
+    rightSlab.receiveShadow = true;
+    buildingGroup.add(rightSlab);
+
+    // Triangular Gable Walls (Front & Back)
+    const gableFrontGeo = new THREE.ConeGeometry(width / 2 + 0.1, roofHeightLocal, 4);
+    const gableFront = new THREE.Mesh(gableFrontGeo, woodMat);
+    gableFront.position.set(0, wallHeight + roofHeightLocal / 2, depth / 2);
+    gableFront.rotation.y = Math.PI / 4;
+    gableFront.scale.set(1, 1, 0.1);
+    buildingGroup.add(gableFront);
+
+    // 4. Wooden Entrance Door
+    const doorGeo = new THREE.BoxGeometry(1.4, 2.2, 0.15);
+    const door = new THREE.Mesh(doorGeo, woodMat);
+    door.position.set(0, 1.1, depth / 2 + 0.08);
+    door.castShadow = true;
+    buildingGroup.add(door);
+
+    const doorFrameMat = new THREE.MeshStandardMaterial({ color: PALETTE.WOOD.DARK_OAK });
+    const frameGeo = new THREE.BoxGeometry(1.6, 2.35, 0.1);
+    const frame = new THREE.Mesh(frameGeo, doorFrameMat);
+    frame.position.set(0, 1.15, depth / 2 + 0.04);
+    buildingGroup.add(frame);
+
+    // 5. Windows with Wooden Shutters
+    const winGeo = new THREE.BoxGeometry(1.0, 1.0, 0.1);
+    const glassMat = new THREE.MeshStandardMaterial({ color: PALETTE.BRAND.RESONANT_GOLD, emissive: PALETTE.BRAND.RESONANT_GOLD, emissiveIntensity: 0.5 });
+    const windowMesh = new THREE.Mesh(winGeo, glassMat);
+    windowMesh.position.set(width / 2 + 0.06, 1.8, 0);
+    windowMesh.rotation.y = Math.PI / 2;
+    buildingGroup.add(windowMesh);
+
+    // 6. Stone Chimney
+    const chimneyGeo = new THREE.BoxGeometry(1.0, wallHeight + roofHeightLocal + 0.8, 1.0);
+    const chimney = new THREE.Mesh(chimneyGeo, wallMat);
+    chimney.position.set(width / 2 - 0.4, (wallHeight + roofHeightLocal) / 2 + 0.4, -depth / 4);
+    chimney.castShadow = true;
+    chimney.receiveShadow = true;
+    buildingGroup.add(chimney);
+  }
+
+  /**
+   * Spawns the new rural map hub: vast mansion (villa), small village cottages,
+   * stone approach path, and a forested zone rich in flora (wildflowers, shrubs,
+   * rocks, mushrooms, tall grass) using existing graphic-pack resources.
+   */
+  private spawnRuralHub(terrain: Terrain): void {
+    // ---------- 1. VAST MANSION (VILLA) ----------
+    const mansionX = 18;
+    const mansionZ = -16;
+    const mansionGroundY = terrain.getHeightAt(mansionX, mansionZ);
+
+    const mansionGroup = new THREE.Group();
+    mansionGroup.position.set(mansionX, mansionGroundY, mansionZ);
+    const mansionCobbleTex = packTextureLoader.getSubTexture('wall_stone_blocks', { repeatX: 3, repeatY: 2 });
+    const mansionWoodTex = packTextureLoader.getSubTexture('wood_props_crate', { repeatX: 2, repeatY: 2 });
+    const mansionRoofTex = packTextureLoader.getSubTexture('roof_shingle_bronze', { repeatX: 4, repeatY: 4 });
+    const mansionCobbleMat = new THREE.MeshStandardMaterial({ map: mansionCobbleTex, roughness: 0.85, metalness: 0.05, color: PALETTE.NEUTRAL.ASH_PURPLE });
+    const mansionWoodMat = new THREE.MeshStandardMaterial({ map: mansionWoodTex, roughness: 0.8, metalness: 0.1, color: PALETTE.WOOD.BURNT_UMBER });
+    const mansionRoofMat = new THREE.MeshStandardMaterial({ map: mansionRoofTex, roughness: 0.75, metalness: 0.05, color: PALETTE.BRAND.OLD_BRONZE });
+    this.buildFantasyHouse(mansionGroup, 8, 9, 4.2, 3.0, mansionWoodTex, mansionRoofTex, mansionCobbleMat, mansionWoodMat, mansionRoofMat);
+    this.group.add(mansionGroup);
+    this.obstacles.push({ x: mansionX, z: mansionZ, radius: 4.6 });
+
+    // ---------- 2. Small village cottages ----------
+    const cottageAGroup = new THREE.Group();
+    cottageAGroup.position.set(6, terrain.getHeightAt(6, -19), -19);
+    this.buildFantasyHouse(cottageAGroup, 3.4, 4.2, 2.2, 1.8, mansionWoodTex, mansionRoofTex, mansionCobbleMat, mansionWoodMat, mansionRoofMat);
+    this.group.add(cottageAGroup);
+    this.obstacles.push({ x: 6, z: -19, radius: 1.7 });
+
+    const cottageBGroup = new THREE.Group();
+    cottageBGroup.position.set(9, terrain.getHeightAt(9, -22), -22);
+    this.buildFantasyHouse(cottageBGroup, 3.2, 3.8, 2.0, 1.6, mansionWoodTex, mansionRoofTex, mansionCobbleMat, mansionWoodMat, mansionRoofMat);
+    this.group.add(cottageBGroup);
+    this.obstacles.push({ x: 9, z: -22, radius: 1.5 });
+
+    // ---------- 3. Stone approach path (mansion <-> village) ----------
+    const pathStart = new THREE.Vector3(18, 0, -16);
+    const pathEnd = new THREE.Vector3(6, 0, -19);
+    const pathMid = new THREE.Vector3().addVectors(pathStart, pathEnd).multiplyScalar(0.5);
+    const pathMat = new THREE.MeshStandardMaterial({ map: mansionCobbleTex, roughness: 0.9, metalness: 0.02 });
+    const pathMesh = new THREE.Mesh(new THREE.PlaneGeometry(pathStart.distanceTo(pathEnd), 2.6), pathMat);
+    pathMesh.rotation.x = -Math.PI / 2;
+    pathMesh.position.set(pathMid.x, terrain.getHeightAt(pathMid.x, pathMid.z), pathMid.z);
+    pathMesh.castShadow = true;
+    pathMesh.receiveShadow = true;
+    this.group.add(pathMesh);
+
+    // ---------- 4. Forest zone with tall trees + diverse flora ----------
+    const forestTreesTex = packTextureLoader.getSubTexture('tree_01', { repeatX: 1, repeatY: 1 });
+    const forestBatch1 = new InstancedBillboard({ texture: forestTreesTex, width: 3.0, height: 6.0, castShadow: true }, 8);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const r = 2 + ((i * 3) % 5);
+      const fx = 2 + Math.cos(a) * r;
+      const fz = -26 + Math.sin(a) * r;
+      forestBatch1.add(new THREE.Vector3(fx, terrain.getHeightAt(fx, fz), fz), 1.4);
+    }
+    this.group.add(forestBatch1.mesh);
+    this.instancedBillboards.push(forestBatch1);
+
+    const forestTrees2Tex = packTextureLoader.getSubTexture('tree_large_01', { repeatX: 1, repeatY: 1 });
+    const forestBatch2 = new InstancedBillboard({ texture: forestTrees2Tex, width: 4.5, height: 7.2, castShadow: true }, 6);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + 0.4;
+      const r = 2 + ((i * 5) % 4);
+      const fx = 2 + Math.cos(a) * r;
+      const fz = -26 + Math.sin(a) * r;
+      forestBatch2.add(new THREE.Vector3(fx, terrain.getHeightAt(fx, fz), fz), 2.2);
+    }
+    this.group.add(forestBatch2.mesh);
+    this.instancedBillboards.push(forestBatch2);
+
+    // Diverse wildflowers (red / yellow / cyan) scattered in the hub
+    const wildflowerSources: Array<{ tex: THREE.Texture; count: number; spreadX: number; spreadZ: number }> = [
+      { tex: spriteLoader.getTexture('wildflower_red'), count: 5, spreadX: 4, spreadZ: -20 },
+      { tex: spriteLoader.getTexture('wildflower_yellow'), count: 5, spreadX: 4, spreadZ: -24 },
+      { tex: spriteLoader.getTexture('wildflower_cyan'), count: 5, spreadX: 4, spreadZ: -28 },
+    ];
+    for (const wildflowerSource of wildflowerSources) {
+      const batch = new InstancedBillboard({ texture: wildflowerSource.tex, width: 0.7, height: 0.7, castShadow: true }, wildflowerSource.count);
+      for (let i = 0; i < wildflowerSource.count; i++) {
+        const fx = wildflowerSource.spreadX + ((i * 7) % 5) - 2;
+        const fz = wildflowerSource.spreadZ + ((i * 3) % 5) - 2;
+        batch.add(new THREE.Vector3(fx, terrain.getHeightAt(fx, fz), fz), 0.7);
+      }
+      this.group.add(batch.mesh);
+      this.instancedBillboards.push(batch);
+    }
+
+    // Shrubs (arbustos) around the hub
+    const shrubTex = packTextureLoader.getSubTexture('bush_small_01', { repeatX: 1, repeatY: 1 });
+    for (let i = 0; i < 6; i++) {
+      const sx = 4 + Math.cos((i / 6) * Math.PI * 2) * (3 + (i % 3));
+      const sz = -20 + Math.sin((i / 6) * Math.PI * 2) * (3 + (i % 3));
+      const shrub = new BillboardProp({ texture: shrubTex, width: 0.8, height: 0.8, type: 'cylindrical', castShadow: true });
+      shrub.mesh.position.set(sx, terrain.getHeightAt(sx, sz), sz);
+      this.group.add(shrub.mesh);
+      this.billboardProps.push(shrub);
+    }
+
+    // Rocks (rochas)
+    const rockTex = packTextureLoader.getSubTexture('rock_small_01', { repeatX: 1, repeatY: 1 });
+    for (let i = 0; i < 6; i++) {
+      const rx = 5 + Math.cos((i / 6) * Math.PI * 2) * (2 + (i % 3));
+      const rz = -16 + Math.sin((i / 6) * Math.PI * 2) * (2 + (i % 3));
+      const rock = new BillboardProp({ texture: rockTex, width: 0.9, height: 0.9, type: 'cylindrical', castShadow: true });
+      rock.mesh.position.set(rx, terrain.getHeightAt(rx, rz), rz);
+      this.group.add(rock.mesh);
+      this.billboardProps.push(rock);
+    }
+
+    // Mushrooms (hongos)
+    const mushroomTex = spriteLoader.getTexture('mushroom_forest');
+    for (let i = 0; i < 8; i++) {
+      const mx = 3 + Math.cos((i / 8) * Math.PI * 2) * (3 + (i % 3));
+      const mz = -30 + Math.sin((i / 8) * Math.PI * 2) * (3 + (i % 3));
+      const mushroom = new BillboardProp({ texture: mushroomTex, width: 0.65, height: 0.65, type: 'cylindrical', castShadow: true });
+      mushroom.mesh.position.set(mx, terrain.getHeightAt(mx, mz), mz);
+      this.group.add(mushroom.mesh);
+      this.billboardProps.push(mushroom);
+    }
+
+    // Tall grass (hierba alta) — crossed-plane ferns
+    const fernTex = spriteLoader.getTexture('fern_shrub');
+    for (let i = 0; i < 6; i++) {
+      const gx = 5 + Math.cos((i / 6) * Math.PI * 2) * (2 + (i % 3));
+      const gz = -14 + Math.sin((i / 6) * Math.PI * 2) * (2 + (i % 3));
+      const fern = new BillboardProp({ texture: fernTex, width: 0.9, height: 0.9, type: 'crossed', castShadow: true });
+      fern.mesh.position.set(gx, terrain.getHeightAt(gx, gz), gz);
       this.group.add(fern.mesh);
       this.billboardProps.push(fern);
     }
