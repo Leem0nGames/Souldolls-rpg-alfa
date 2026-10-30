@@ -157,6 +157,11 @@ export class SpriteLoader {
     let normalTex: THREE.Texture;
     if (assetId === 'hero_adventurer') {
       normalTex = SpriteSheetGenerator.createHeroNormalMap();
+      this.loadExternalNormalMap(
+        normalTex,
+        '/assets/aistudio/fighter_walk_normal.png',
+        assetId
+      );
     } else if (assetId === 'slime_forest') {
       normalTex = SpriteSheetGenerator.createEnemyNormalMap();
     } else if (assetId === 'npc_elder_rhogar') {
@@ -172,6 +177,36 @@ export class SpriteLoader {
 
     this.textureCache.set(normalKey, normalTex);
     return normalTex;
+  }
+
+  private loadExternalNormalMap(
+    target: THREE.Texture,
+    src: string,
+    assetId: string
+  ): void {
+    if (typeof document === 'undefined') return;
+
+    this.loader.load(
+      src,
+      (loadedTex) => {
+        loadedTex.magFilter = THREE.NearestFilter;
+        loadedTex.minFilter = THREE.NearestFilter;
+        loadedTex.generateMipmaps = false;
+        loadedTex.wrapS = THREE.RepeatWrapping;
+        loadedTex.wrapT = THREE.RepeatWrapping;
+        loadedTex.colorSpace = THREE.NoColorSpace;
+        target.image = loadedTex.image;
+        target.needsUpdate = true;
+        loadedTex.dispose();
+      },
+      undefined,
+      (err: unknown) => {
+        const errMsg = err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Archivo no encontrado. Se conserva el mapa normal procedural.';
+        console.warn(`[SpriteLoader] Mapa normal no disponible para "${assetId}" (${src}):`, errMsg);
+      }
+    );
   }
 
   public dispose() {

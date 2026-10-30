@@ -71,14 +71,18 @@ async function runQASuite() {
   );
 
   const heroDef = ASSET_CATALOG.hero_adventurer;
+  const normalMapPath = 'public/assets/aistudio/fighter_walk_normal.png';
+  const normalMapHeader = fs.readFileSync(normalMapPath);
   assert(
     heroDef.src === '/assets/aistudio/fighter_walk.png' &&
       fs.existsSync(`public${heroDef.src}`) &&
       heroDef.frameWidth * heroDef.animation.cols === 694 &&
-      heroDef.frameHeight * heroDef.animation.rows === 1034,
+      heroDef.frameHeight * heroDef.animation.rows === 1034 &&
+      normalMapHeader.readUInt32BE(16) === 694 &&
+      normalMapHeader.readUInt32BE(20) === 1034,
     'A4: Spritesheet del jugador conectado',
     'A',
-    'La hoja del jugador existe, coincide con las dimensiones del archivo y conserva su cuadrícula 4x4.'
+    'La hoja y su mapa normal existen, coinciden en dimensiones y conservan la cuadrícula 4x4.'
   );
 
   let catalogValid = true;
