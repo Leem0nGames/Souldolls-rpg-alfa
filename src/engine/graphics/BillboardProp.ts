@@ -30,7 +30,7 @@ export class BillboardProp {
 
     this.material = new THREE.MeshStandardMaterial({
       map: config.texture,
-      transparent: true,
+      transparent: false, // Opaque cutout via alphaTest (consistente con BillboardCharacter)
       alphaTest: 0.5,
       depthWrite: true,
       roughness: 0.9,
@@ -43,16 +43,19 @@ export class BillboardProp {
       const plane1 = new THREE.Mesh(planeGeo, this.material);
       plane1.rotation.y = Math.PI / 4;
       plane1.castShadow = config.castShadow ?? true;
+      plane1.receiveShadow = true;
       this.mesh.add(plane1);
 
       const plane2 = new THREE.Mesh(planeGeo, this.material);
       plane2.rotation.y = -Math.PI / 4;
       plane2.castShadow = config.castShadow ?? true;
+      plane2.receiveShadow = true;
       this.mesh.add(plane2);
     } else {
       // Single cylindrical billboard
       const plane = new THREE.Mesh(planeGeo, this.material);
       plane.castShadow = config.castShadow ?? true;
+      plane.receiveShadow = true;
       this.mesh.add(plane);
     }
   }

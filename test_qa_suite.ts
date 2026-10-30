@@ -776,6 +776,37 @@ async function runQASuite() {
     `Bloom threshold=${DEFAULT_POSTFX_CONFIG.bloomThreshold}, strength=${DEFAULT_POSTFX_CONFIG.bloomStrength}, grade: sat=${DEFAULT_POSTFX_CONFIG.saturation}, contraste=${DEFAULT_POSTFX_CONFIG.contrast}.`
   );
 
+  const cutoutProbe = new BillboardCharacter(
+    spriteLoader.getTexture('hero_adventurer'),
+    1.35,
+    2.0,
+    { cols: 4, rows: 4, frameInsetPx: 0.75 }
+  );
+  const cutoutMaterialOk =
+    cutoutProbe.material.transparent === false &&
+    cutoutProbe.material.alphaTest === 0.5 &&
+    cutoutProbe.spriteMesh.receiveShadow === true &&
+    cutoutProbe.spriteMesh.castShadow === true;
+  cutoutProbe.spriteMesh.scale.set(1, 1, 1);
+  assert(
+    cutoutMaterialOk,
+    'K5: Cutout opaco + recibido de sombras en sprites',
+    'K',
+    'alphaTest 0.5 sin transparent (menos artefactos de orden) y receiveShadow activo para sombras HD-2D sobre sprites.'
+  );
+
+  // Inset UV: repeat recortado por 2*inset/sheet en cada eje (sheet fallback 128x192 en Node)
+  const repeatU = cutoutProbe.material.map!.repeat.x;
+  const expectedU = 1 / 4 - 2 * (0.75 / 128);
+  const repeatOk = Math.abs(repeatU - expectedU) < 1e-6;
+  cutoutProbe.dispose();
+  assert(
+    repeatOk,
+    'K6: Inset anti-bleed aplicado a la lattice UV',
+    'K',
+    `repeat=${repeatU.toFixed(6)} (esperado ${expectedU.toFixed(6)}) con inset 0.75px sobre hoja de 128px de ancho.`
+  );
+
   console.log('\n====================================================');
   const total = results.length;
   const passed = results.filter((r) => r.passed).length;

@@ -31,6 +31,8 @@ export const ASSET_CATALOG: Record<string, SpriteAssetDefinition> = {
         up: 3,
       },
       frameInterval: 0.14,
+      // La hoja AI tiene frames de 173.5x258.5 px (lattice fraccional): el inset evita bleed entre frames vecinos
+      frameInsetPx: 0.75,
     },
     scale: {
       width: 1.35,

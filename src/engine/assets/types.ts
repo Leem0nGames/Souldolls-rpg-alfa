@@ -17,6 +17,8 @@ export interface SpriteAnimationConfig {
     up: number;
   };
   frameInterval?: number; // seconds per animation frame
+  /** Half-texel UV inset around each frame (in px) to prevent neighbour-frame edge bleed. 0 = disabled. */
+  frameInsetPx?: number;
 }
 
 /**

@@ -12,6 +12,8 @@ export interface SpriteSheetConfig {
   frameInterval?: number; // seconds per animation frame
   /** Frame column shown at rest (RPG Maker XP standard: column 1). */
   idleFrame?: number;
+  /** Half-texel UV frame inset in px to prevent neighbour-frame edge bleed (0 = off). */
+  frameInsetPx?: number;
   /** PBR material tuning per asset (defaults: normalScale 0.7, roughness 0.85, metalness 0.05). */
   material?: { normalScale?: number; roughness?: number; metalness?: number };
   /**
@@ -68,6 +70,7 @@ export class BillboardCharacter {
       },
       frameInterval: customConfig?.frameInterval ?? 0.14,
       idleFrame: customConfig?.idleFrame ?? 1,
+      frameInsetPx: customConfig?.frameInsetPx ?? 0,
       anchor: customConfig?.anchor ?? { x: 0.5, y: 0 },
       material: customConfig?.material ?? {},
     };
@@ -108,7 +111,7 @@ export class BillboardCharacter {
         this.config.material.normalScale ?? 0.7,
         this.config.material.normalScale ?? 0.7
       ),
-      transparent: true,
+      transparent: false, // Opaque cutout: alphaTest handles the alpha gracefully (fewer sort artifacts)
       alphaTest: 0.5, // Eliminates dark transparent halos in WebGL
       roughness: this.config.material.roughness ?? 0.85,
       metalness: this.config.material.metalness ?? 0.05,
@@ -117,7 +120,8 @@ export class BillboardCharacter {
 
     this.spriteMesh = new THREE.Mesh(planeGeo, this.material);
     this.spriteMesh.castShadow = true;
-    this.spriteMesh.receiveShadow = false;
+    // HD-2D standard: sprites darken when standing inside terrain/prop shadows
+    this.spriteMesh.receiveShadow = true;
     this.mesh.add(this.spriteMesh);
 
     // 2. Subtle 3D ground shadow decal at feet
@@ -136,17 +140,39 @@ export class BillboardCharacter {
 
   /**
    * Updates UV coordinates to display the exact column (frame) and row (direction).
+   * Applies an optional half-texel inset so fractional frame grids (AI sheets)
+   * never sample texels belonging to a neighbouring frame at the borders.
    */
   private updateUVOffset(col: number, row: number) {
     this.currentFrame = col;
     this.currentRow = row;
 
-    const u = col / this.config.cols;
-    // In Three.js CanvasTexture UV space, V=0 is bottom, V=1 is top
-    const v = 1 - (row + 1) / this.config.rows;
+    const image = this.texture.image as
+      | { width?: number; height?: number }
+      | undefined;
+    const sheetW =
+      image && typeof image.width === 'number' && image.width > 0 ? image.width : 0;
+    const sheetH =
+      image && typeof image.height === 'number' && image.height > 0 ? image.height : 0;
 
+    let insetU = 0;
+    let insetV = 0;
+    if (this.config.frameInsetPx > 0 && sheetW > 0 && sheetH > 0) {
+      insetU = this.config.frameInsetPx / sheetW;
+      insetV = this.config.frameInsetPx / sheetH;
+    }
+
+    const u = col / this.config.cols + insetU;
+    // In Three.js CanvasTexture UV space, V=0 is bottom, V=1 is top
+    const v = 1 - (row + 1) / this.config.rows + insetV;
+
+    const repeatU = 1 / this.config.cols - 2 * insetU;
+    const repeatV = 1 / this.config.rows - 2 * insetV;
+
+    this.texture.repeat.set(repeatU, repeatV);
     this.texture.offset.set(u, v);
     if (this.normalTexture) {
+      this.normalTexture.repeat.set(repeatU, repeatV);
       this.normalTexture.offset.set(u, v);
     }
   }
