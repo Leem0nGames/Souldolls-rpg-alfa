@@ -33,7 +33,8 @@ export class SpriteSheetGenerator {
     return null;
   }
 
-  private static createFallbackDataTexture(width: number, height: number): THREE.CanvasTexture {
+  /** Guaranteed solid-color DataTexture used when no canvas is available (SSR/tests). */
+  public static createFallbackDataTexture(width: number, height: number): THREE.CanvasTexture {
     const data = new Uint8Array(width * height * 4);
     for (let i = 0; i < data.length; i += 4) {
       data[i] = 70;
@@ -564,7 +565,9 @@ export class SpriteSheetGenerator {
     }
 
     ctx.putImageData(destData, 0, 0);
-    return this.configureTexture(canvas);
+    const normalTexture = this.configureTexture(canvas);
+    normalTexture.colorSpace = THREE.NoColorSpace;
+    return normalTexture;
   }
 
   public static createHeroNormalMap(): THREE.CanvasTexture {

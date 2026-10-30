@@ -10,6 +10,16 @@ export interface SpriteSheetConfig {
     up: number;
   };
   frameInterval?: number; // seconds per animation frame
+  /** Frame column shown at rest (RPG Maker XP standard: column 1). */
+  idleFrame?: number;
+  /** PBR material tuning per asset (defaults: normalScale 0.7, roughness 0.85, metalness 0.05). */
+  material?: { normalScale?: number; roughness?: number; metalness?: number };
+  /**
+   * Sprite pivot within its frame, data-driven from the asset catalog.
+   * x: 0 = left edge, 0.5 = center, 1 = right edge.
+   * y: 0 = feet at ground level, 0.5 = centered, 1 = top at ground level.
+   */
+  anchor?: { x: number; y: number };
 }
 
 /**
@@ -57,6 +67,9 @@ export class BillboardCharacter {
         up: 3,
       },
       frameInterval: customConfig?.frameInterval ?? 0.14,
+      idleFrame: customConfig?.idleFrame ?? 1,
+      anchor: customConfig?.anchor ?? { x: 0.5, y: 0 },
+      material: customConfig?.material ?? {},
     };
 
     // Clone texture so UV offsets are independent per instance
@@ -80,18 +93,25 @@ export class BillboardCharacter {
     // Initial UV offset (Frame 1, Row 0 = Down)
     this.updateUVOffset(1, this.config.rowMapping.down);
 
-    // 1. Plane Geometry with anchor at feet (y=0)
+    // 1. Plane Geometry anchored per catalog anchor (default: feet at y=0)
     const planeGeo = new THREE.PlaneGeometry(width, height);
-    planeGeo.translate(0, height / 2, 0);
+    planeGeo.translate(
+      width * (this.config.anchor.x - 0.5),
+      height * (0.5 - this.config.anchor.y),
+      0
+    );
 
     this.material = new THREE.MeshStandardMaterial({
       map: this.texture,
       ...(normalMap ? { normalMap } : {}),
-      normalScale: new THREE.Vector2(0.7, 0.7),
+      normalScale: new THREE.Vector2(
+        this.config.material.normalScale ?? 0.7,
+        this.config.material.normalScale ?? 0.7
+      ),
       transparent: true,
       alphaTest: 0.5, // Eliminates dark transparent halos in WebGL
-      roughness: 0.85,
-      metalness: 0.05,
+      roughness: this.config.material.roughness ?? 0.85,
+      metalness: this.config.material.metalness ?? 0.05,
       side: THREE.DoubleSide,
     });
 
@@ -152,58 +172,11 @@ export class BillboardCharacter {
     // 1. Cylindrical billboarding: Sprite normal always faces camera
     this.spriteMesh.rotation.y = cameraYaw + Math.PI;
 
-    let targetRow = this.lastFacingRow;
+    const moving = isMoving && (moveInput.x !== 0 || moveInput.y !== 0);
+    const targetRow = this.resolveFacingRow(moving, moveInput.x, moveInput.y);
 
-    if (isMoving && (moveInput.x !== 0 || moveInput.y !== 0)) {
-      if (Math.abs(moveInput.x) > Math.abs(moveInput.y)) {
-        if (moveInput.x < 0) {
-          // Moving to screen LEFT
-          targetRow = this.config.rowMapping.left;
-          // If sheet only has 1 side row (left === right), mirror horizontally
-          if (this.config.rowMapping.left === this.config.rowMapping.right) {
-            this.spriteMesh.scale.x = -Math.abs(this.baseScaleX);
-          } else {
-            this.spriteMesh.scale.x = Math.abs(this.baseScaleX);
-          }
-        } else {
-          // Moving to screen RIGHT
-          targetRow = this.config.rowMapping.right;
-          this.spriteMesh.scale.x = Math.abs(this.baseScaleX);
-        }
-      } else {
-        if (moveInput.y > 0) {
-          // Moving UP (away from camera -> back of character)
-          targetRow = this.config.rowMapping.up;
-        } else {
-          // Moving DOWN (towards camera -> front of character)
-          targetRow = this.config.rowMapping.down;
-        }
-        this.spriteMesh.scale.x = Math.abs(this.baseScaleX);
-      }
-      this.lastFacingRow = targetRow;
-    }
-
-    // 2. Advance animation frames
-    if (isMoving) {
-      this.animTimer += dt;
-      if (this.animTimer >= this.config.frameInterval) {
-        this.animTimer = 0;
-        this.currentFrame = (this.currentFrame + 1) % this.config.cols;
-      }
-    } else {
-      this.currentFrame = 1;
-      this.animTimer = 0;
-    }
-
-    this.updateUVOffset(this.currentFrame, targetRow);
-
-    // 3. Hit flash handling
-    if (this.flashTimer > 0) {
-      this.flashTimer -= dt;
-      if (this.flashTimer <= 0) {
-        this.material.color.copy(this.normalColor);
-      }
-    }
+    this.advanceAnimation(dt, isMoving, targetRow);
+    this.handleHitFlash(dt);
   }
 
   /**
@@ -224,32 +197,51 @@ export class BillboardCharacter {
     const projRight = vWorldX * rightX + vWorldZ * rightZ;
     const projUp = vWorldX * fwdX + vWorldZ * fwdZ;
 
+    const targetRow = this.resolveFacingRow(isMoving, projRight, projUp);
+
+    this.advanceAnimation(dt, isMoving, targetRow);
+    this.handleHitFlash(dt);
+  }
+
+  /**
+   * Selects the spritesheet row (direction) from screen-space projection.
+   * Mirrors horizontally when the sheet shares a single side row (left === right).
+   */
+  private resolveFacingRow(isMoving: boolean, screenX: number, screenY: number): number {
+    if (!isMoving) return this.lastFacingRow;
+
     let targetRow = this.lastFacingRow;
 
-    if (isMoving) {
-      if (Math.abs(projRight) > Math.abs(projUp)) {
-        if (projRight < 0) {
-          targetRow = this.config.rowMapping.left;
-          if (this.config.rowMapping.left === this.config.rowMapping.right) {
-            this.spriteMesh.scale.x = -Math.abs(this.baseScaleX);
-          } else {
-            this.spriteMesh.scale.x = Math.abs(this.baseScaleX);
-          }
+    if (Math.abs(screenX) > Math.abs(screenY)) {
+      if (screenX < 0) {
+        // Facing screen LEFT
+        targetRow = this.config.rowMapping.left;
+        // If sheet only has 1 side row (left === right), mirror horizontally
+        if (this.config.rowMapping.left === this.config.rowMapping.right) {
+          this.spriteMesh.scale.x = -Math.abs(this.baseScaleX);
         } else {
-          targetRow = this.config.rowMapping.right;
           this.spriteMesh.scale.x = Math.abs(this.baseScaleX);
         }
       } else {
-        if (projUp > 0) {
-          targetRow = this.config.rowMapping.up;
-        } else {
-          targetRow = this.config.rowMapping.down;
-        }
+        // Facing screen RIGHT
+        targetRow = this.config.rowMapping.right;
         this.spriteMesh.scale.x = Math.abs(this.baseScaleX);
       }
-      this.lastFacingRow = targetRow;
+    } else {
+      // screenY > 0: away from camera (back); screenY <= 0: towards camera (front)
+      targetRow = screenY > 0 ? this.config.rowMapping.up : this.config.rowMapping.down;
+      this.spriteMesh.scale.x = Math.abs(this.baseScaleX);
     }
 
+    this.lastFacingRow = targetRow;
+    return targetRow;
+  }
+
+  /**
+   * Advances the walk cycle while moving; snaps to the configurable idle
+   * frame (RPG Maker XP default: column 1) when at rest.
+   */
+  private advanceAnimation(dt: number, isMoving: boolean, targetRow: number) {
     if (isMoving) {
       this.animTimer += dt;
       if (this.animTimer >= this.config.frameInterval) {
@@ -257,12 +249,15 @@ export class BillboardCharacter {
         this.currentFrame = (this.currentFrame + 1) % this.config.cols;
       }
     } else {
-      this.currentFrame = 1;
+      this.currentFrame = this.config.idleFrame;
       this.animTimer = 0;
     }
 
     this.updateUVOffset(this.currentFrame, targetRow);
+  }
 
+  /** Shared hit-flash decay handling across both update paths. */
+  private handleHitFlash(dt: number) {
     if (this.flashTimer > 0) {
       this.flashTimer -= dt;
       if (this.flashTimer <= 0) {

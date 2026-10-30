@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TextureGenerator } from '../graphics/TextureGenerator';
 import { PALETTE } from '../graphics/Palette';
+import { resolveSpriteCandidates } from './optimizedSrc';
 
 export interface PackTextureOptions {
   repeatX?: number;
@@ -366,6 +367,8 @@ export class PackTextureLoader {
 
   /**
    * Asynchronously loads HTMLImageElement for canvas cropping.
+   * Attempts the optimized .webp variant first, keeping the original
+   * artifacts as fallback whenever a variant is missing or fails.
    */
   public async loadBaseImage(filename: string): Promise<HTMLImageElement | null> {
     if (typeof window === 'undefined' || typeof Image === 'undefined') {
@@ -377,14 +380,23 @@ export class PackTextureLoader {
     }
 
     const promise = new Promise<HTMLImageElement | null>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = (err) => {
-        console.warn(`[PackTextureLoader] Error loading image "${filename}":`, err);
-        resolve(null);
+      const candidates = resolveSpriteCandidates(`/assets/pack/${filename}`)
+        .map((url) => url.slice('/assets/pack/'.length));
+      const attempt = (index: number): void => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = (err) => {
+          if (index + 1 < candidates.length) {
+            attempt(index + 1);
+          } else {
+            console.warn(`[PackTextureLoader] Error loading image "${filename}":`, err);
+            resolve(null);
+          }
+        };
+        img.src = `/assets/pack/${candidates[index]}`;
       };
-      img.src = `/assets/pack/${filename}`;
+      attempt(0);
     });
 
     this.baseImageCache.set(filename, promise);
@@ -393,6 +405,8 @@ export class PackTextureLoader {
 
   /**
    * Asynchronously loads a base Three.js texture from /assets/pack/${filename}.
+   * Prefers the optimized .webp sidecar (see scripts/optimize-assets.ts) and
+   * cascades to the original PNG before using the procedural fallback.
    */
   public async loadBaseTexture(filename: string): Promise<THREE.Texture> {
     if (this.baseTextureCache.has(filename)) {
@@ -406,25 +420,34 @@ export class PackTextureLoader {
         return;
       }
 
-      const path = `/assets/pack/${filename}`;
-      this.loader.load(
-        path,
-        (loadedTex) => {
-          loadedTex.magFilter = THREE.NearestFilter;
-          loadedTex.minFilter = THREE.NearestFilter;
-          loadedTex.generateMipmaps = false;
-          loadedTex.wrapS = THREE.RepeatWrapping;
-          loadedTex.wrapT = THREE.RepeatWrapping;
-          loadedTex.colorSpace = THREE.SRGBColorSpace;
-          resolve(loadedTex);
-        },
-        undefined,
-        (err) => {
-          console.warn(`[PackTextureLoader] Fallback procedural para pack "${filename}":`, err);
-          const fallback = this.getProceduralFallback(filename.split('.')[0].toLowerCase());
-          resolve(fallback);
-        }
-      );
+      const candidates = resolveSpriteCandidates(`/assets/pack/${filename}`);
+      const attemptLoad = (index: number): void => {
+        this.loader.load(
+          candidates[index],
+          (loadedTex) => {
+            loadedTex.magFilter = THREE.NearestFilter;
+            loadedTex.minFilter = THREE.NearestFilter;
+            loadedTex.generateMipmaps = false;
+            loadedTex.wrapS = THREE.RepeatWrapping;
+            loadedTex.wrapT = THREE.RepeatWrapping;
+            loadedTex.colorSpace = THREE.SRGBColorSpace;
+            resolve(loadedTex);
+          },
+          undefined,
+          () => {
+            if (index + 1 < candidates.length) {
+              attemptLoad(index + 1);
+            } else {
+              console.warn(
+                `[PackTextureLoader] Fallback procedural para pack "${filename}" (agotado ${candidates.join(', ')})`
+              );
+              const fallback = this.getProceduralFallback(filename.split('.')[0].toLowerCase());
+              resolve(fallback);
+            }
+          }
+        );
+      };
+      attemptLoad(0);
     });
 
     this.baseTextureCache.set(filename, promise);

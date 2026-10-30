@@ -55,7 +55,7 @@ export class Player {
       heroTex,
       def.scale.width,
       def.scale.height,
-      def.animation,
+      { ...def.animation, anchor: def.anchor, material: def.material },
       heroNorm
     );
     this.mesh.add(this.billboard.mesh);

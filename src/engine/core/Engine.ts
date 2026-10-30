@@ -12,6 +12,8 @@ import { QuestSystem, QuestRuntimeState } from '../quests/QuestSystem';
 import { Dungeon } from '../world/Dungeon';
 import { EnvironmentParticles } from '../world/EnvironmentParticles';
 import { packTextureLoader } from '../assets/PackTextureLoader';
+import { spriteLoader } from '../assets/SpriteLoader';
+import { ASSET_CATALOG } from '../assets/catalog';
 
 
 export interface EngineStats {
@@ -108,6 +110,10 @@ export class Engine {
     this.setupLights();
 
     // 5. World construction (conventional 3D geometry + pixel-art textures)
+    // Kick off asynchronous sprite preloads (hero, enemies, NPC, billboard props)
+    // so external PNGs download in parallel while the scene builds synchronously.
+    void spriteLoader.preloadAssets(Object.keys(ASSET_CATALOG));
+
     this.regionManager = new RegionManager(133742, 70);
     this.terrain = new Terrain(140, 70);
     this.scene.add(this.terrain.mesh);

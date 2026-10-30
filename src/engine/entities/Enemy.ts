@@ -36,7 +36,7 @@ export class Enemy {
     const def = ASSET_CATALOG.slime_forest;
     const enemyTex = spriteLoader.getTexture('slime_forest');
     const enemyNorm = spriteLoader.getNormalMap('slime_forest');
-    this.billboard = new BillboardCharacter(enemyTex, def.scale.width, def.scale.height, def.animation, enemyNorm);
+    this.billboard = new BillboardCharacter(enemyTex, def.scale.width, def.scale.height, { ...def.animation, anchor: def.anchor, material: def.material }, enemyNorm);
     this.mesh.add(this.billboard.mesh);
 
     // 2. 3D HP Bar floating above sprite

@@ -12,7 +12,13 @@ export const ASSET_CATALOG: Record<string, SpriteAssetDefinition> = {
     name: 'Luchador Errante',
     category: 'characters',
     src: '/assets/aistudio/fighter_walk.png',
+    normalMapSrc: '/assets/aistudio/fighter_walk_normal.png',
     fallbackKey: 'hero_spritesheet',
+    material: {
+      normalScale: 1.0,
+      roughness: 0.85,
+      metalness: 0.05,
+    },
     frameWidth: 173.5,
     frameHeight: 258.5,
     animation: {

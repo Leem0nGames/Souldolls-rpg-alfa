@@ -41,7 +41,7 @@ export class NPC {
     const def = ASSET_CATALOG.npc_elder_rhogar;
     const npcTex = spriteLoader.getTexture('npc_elder_rhogar');
     const npcNorm = spriteLoader.getNormalMap('npc_elder_rhogar');
-    this.billboard = new BillboardCharacter(npcTex, def.scale.width, def.scale.height, def.animation, npcNorm);
+    this.billboard = new BillboardCharacter(npcTex, def.scale.width, def.scale.height, { ...def.animation, anchor: def.anchor, material: def.material }, npcNorm);
     this.mesh.add(this.billboard.mesh);
 
     // 2. 3D Floating Quest Rune (Rotates and bobs in 3D space above sprite)

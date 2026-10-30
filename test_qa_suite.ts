@@ -3,6 +3,9 @@ import { DeterministicRandom, GENERATOR_VERSION } from './src/engine/world/Deter
 import { RegionManager, BIOME_DEFINITIONS } from './src/engine/world/RegionManager';
 import { spriteLoader } from './src/engine/assets/SpriteLoader';
 import { ASSET_CATALOG } from './src/engine/assets/catalog';
+import { BillboardCharacter } from './src/engine/graphics/BillboardCharacter';
+import { WEBP_VARIANTS } from './src/engine/assets/webpVariants.generated';
+import { resolveSpriteCandidates } from './src/engine/assets/optimizedSrc';
 import { Terrain } from './src/engine/world/Terrain';
 import { SPELL_CATALOG } from './src/engine/magic/SpellData';
 import { Player } from './src/engine/entities/Player';
@@ -110,6 +113,105 @@ async function runQASuite() {
     'A5: Validación de Integridad del Catálogo',
     'A',
     `Todos los ${Object.keys(ASSET_CATALOG).length} assets en catalog.ts poseen escalas, dimensiones y mappings válidos.`
+  );
+
+  assert(
+    heroDef.normalMapSrc === '/assets/aistudio/fighter_walk_normal.png' &&
+      fs.existsSync(`public${heroDef.normalMapSrc}`),
+    'A6: Normal map data-driven en catálogo',
+    'A',
+    'hero_adventurer declara normalMapSrc apuntando a fighter_walk_normal.png existente (sin hardcode en SpriteLoader).'
+  );
+
+  const heroNormalA = spriteLoader.getNormalMap('hero_adventurer');
+  const heroNormalB = spriteLoader.getNormalMap('hero_adventurer');
+  assert(
+    heroNormalA instanceof THREE.Texture && heroNormalA === heroNormalB,
+    'A7: Normal map cacheado y determinista',
+    'A',
+    "getNormalMap('hero_adventurer') devuelve la misma instancia en llamadas repetidas sin lanzar excepciones."
+  );
+
+  const slimeNormal = spriteLoader.getNormalMap('slime_forest');
+  const npcNormal = spriteLoader.getNormalMap('npc_elder_rhogar');
+  assert(
+    slimeNormal instanceof THREE.Texture && npcNormal instanceof THREE.Texture,
+    'A8: Pipeline genérico de normal maps',
+    'A',
+    'Slime y NPC obtienen normal map por derivación procedural genérica, sin rutas hardcodeadas por ID.'
+  );
+
+  const anchorProbe = new BillboardCharacter(
+    spriteLoader.getTexture('hero_adventurer'),
+    1.35,
+    2.0,
+    { cols: 4, rows: 4, anchor: { x: 0.5, y: 0 } }
+  );
+  anchorProbe.spriteMesh.geometry.computeBoundingBox();
+  const anchorBbox = anchorProbe.spriteMesh.geometry.boundingBox;
+  const anchoredAtFeet =
+    anchorBbox !== null &&
+    Math.abs(anchorBbox.min.y) < 1e-6 &&
+    Math.abs(anchorBbox.max.y - 2.0) < 1e-6;
+  assert(
+    anchoredAtFeet,
+    'A9: Anchor del catálogo aplicado en BillboardCharacter',
+    'A',
+    'Con anchor y=0 los pies del sprite quedan exactamente en y=0 (bounding box 0..height).'
+  );
+  anchorProbe.dispose();
+
+  const heroMaterialTuned =
+    heroDef.material?.normalScale === 1.0 && heroDef.material?.roughness === 0.85;
+  const overrideProbe = new BillboardCharacter(
+    spriteLoader.getTexture('hero_adventurer'),
+    1.35,
+    2.0,
+    {
+      cols: 4,
+      rows: 4,
+      anchor: { x: 0.5, y: 0 },
+      material: { normalScale: 1.25, roughness: 0.6, metalness: 0.2 },
+    }
+  );
+  const overrideApplied =
+    Math.abs(overrideProbe.material.normalScale.x - 1.25) < 1e-6 &&
+    Math.abs(overrideProbe.material.roughness - 0.6) < 1e-6 &&
+    Math.abs(overrideProbe.material.metalness - 0.2) < 1e-6;
+  overrideProbe.dispose();
+  assert(
+    heroMaterialTuned && overrideApplied,
+    'A10: Material PBR configurable por asset',
+    'A',
+    'El catálogo define normalScale/roughness/metalness del héroe y BillboardCharacter aplica overrides desde su config.'
+  );
+
+  const webpManifestValid =
+    WEBP_VARIANTS['/assets/aistudio/fighter_walk.webp'] === true &&
+    WEBP_VARIANTS['/assets/aistudio/fighter_walk_normal.webp'] === true &&
+    fs.existsSync('public/assets/aistudio/fighter_walk.webp') &&
+    fs.existsSync('public/assets/aistudio/fighter_walk_normal.webp');
+  assert(
+    webpManifestValid,
+    'A11: Pipeline de optimización WebP (manifest + sidecars)',
+    'A',
+    `Manifest generado con ${Object.keys(WEBP_VARIANTS).length} variantes; fighter_walk.webp y su normal map existen en disco.`
+  );
+
+  const heroPngBytes = fs.statSync('public/assets/aistudio/fighter_walk.png').size;
+  const heroWebpBytes = fs.statSync('public/assets/aistudio/fighter_walk.webp').size;
+  const heroCandidates = resolveSpriteCandidates('/assets/aistudio/fighter_walk.png');
+  const webpResolutionValid =
+    heroCandidates[0] === '/assets/aistudio/fighter_walk.webp' &&
+    heroCandidates[1] === '/assets/aistudio/fighter_walk.png' &&
+    heroWebpBytes < heroPngBytes &&
+    JSON.stringify(resolveSpriteCandidates('/assets/aistudio/no_existente.png')) ===
+      JSON.stringify(['/assets/aistudio/no_existente.png']);
+  assert(
+    webpResolutionValid,
+    'A12: Consumo preferente WebP con fallback PNG',
+    'A',
+    `El loader intenta ${heroCandidates.join(' → ')}; spritesheet del héroe ${(heroPngBytes / 1024 / 1024).toFixed(2)} MB → ${(heroWebpBytes / 1024 / 1024).toFixed(2)} MB.`
   );
 
   // ----------------------------------------------------
