@@ -34,17 +34,8 @@ export class Environment {
     this.group = new THREE.Group();
     scene.add(this.group);
 
-    this.spawnTreesBillboard(terrain, 54);
-    this.spawnRocksBillboard(terrain, 26);
-    this.spawnBushesBillboard(terrain, 24);
-    this.spawnGladePond(terrain);
-    this.spawnCobblestonePaths(terrain);
-    this.spawnFantasyOutpost(terrain);
-    this.spawnVillageDetails(terrain);
-    this.spawnFencesAndProps(terrain);
-    this.spawnRuins(terrain);
-    this.spawnBillboardDecorations(terrain);
-    this.spawnRuralHub(terrain);
+    // Fixed structures disabled: world is now procedural (chunks + instanced vegetation).
+    // Keep group for compatibility; obstacles remain empty.
   }
 
   /**

@@ -12,6 +12,7 @@ Last updated: M1-M6 implemented + Engine integration.
 - [x] M5 vegetation (placement rules, instancing prep, L-system pre-gen)
 - [x] M6 floating origin
 - [x] M7 integration into Engine (demo runs, build ok)
+- [x] M7c visual polish: Minecraft grass texture on chunks, procedural-only world (no fixed houses), sprite inset disabled for testing
 - [ ] M7b benchmark + final docs polish
 
 ## Current milestone

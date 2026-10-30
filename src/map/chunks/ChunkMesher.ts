@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ChunkData } from './ChunkTypes';
+import { packTextureLoader } from '../../engine/assets/PackTextureLoader';
 
 export function buildChunkMesh(data: ChunkData, stride: number = 1): THREE.Mesh {
   const cells = data.cells;
@@ -8,6 +9,7 @@ export function buildChunkMesh(data: ChunkData, stride: number = 1): THREE.Mesh 
   const n = lodCells + 1;
   const positions = new Float32Array(n * n * 3);
   const colors = new Float32Array(n * n * 3);
+  const uvs = new Float32Array(n * n * 2);
   const indices: number[] = [];
 
   for (let iz = 0; iz < n; iz++) {
@@ -24,6 +26,9 @@ export function buildChunkMesh(data: ChunkData, stride: number = 1): THREE.Mesh 
       colors[idx] = 0.25 + t * 0.15;
       colors[idx + 1] = 0.45 + t * 0.25;
       colors[idx + 2] = 0.2 + (1 - t) * 0.2;
+      const uvidx = (iz * n + ix) * 2;
+      uvs[uvidx] = (ix / Math.max(1, n - 1)) * 4;
+      uvs[uvidx + 1] = (iz / Math.max(1, n - 1)) * 4;
     }
   }
 
@@ -41,14 +46,20 @@ export function buildChunkMesh(data: ChunkData, stride: number = 1): THREE.Mesh 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
   geo.setIndex(indices);
   geo.computeVertexNormals();
   geo.computeBoundingSphere();
 
+  const terrainTexture = packTextureLoader.getSubTexture('terrain_minecraft_grass', {
+    repeatX: 1,
+    repeatY: 1,
+  });
   const mat = new THREE.MeshStandardMaterial({
+    map: terrainTexture,
     vertexColors: true,
-    roughness: 0.9,
-    metalness: 0.05,
+    roughness: 0.95,
+    metalness: 0.0,
     flatShading: false,
   });
   const mesh = new THREE.Mesh(geo, mat);
