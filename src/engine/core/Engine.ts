@@ -14,6 +14,8 @@ import { EnvironmentParticles } from '../world/EnvironmentParticles';
 import { packTextureLoader } from '../assets/PackTextureLoader';
 import { spriteLoader } from '../assets/SpriteLoader';
 import { ASSET_CATALOG } from '../assets/catalog';
+import { LightingDirector } from '../graphics/LightingDirector';
+import { PostFxPipeline } from '../graphics/PostFx';
 
 
 export interface EngineStats {
@@ -62,6 +64,7 @@ export class Engine {
   public dungeon: Dungeon;
   public inDungeon: boolean = false;
   public particles: EnvironmentParticles;
+  public lighting: LightingDirector;
 
   public activeDialogue: NPCDialogue | null = null;
   public onDialogueChange?: (dialogue: NPCDialogue | null) => void;
@@ -74,6 +77,7 @@ export class Engine {
   private totalTime = 0;
   private overworldPortalMesh?: THREE.Mesh;
   private overworldPortalLight?: THREE.PointLight;
+  private postFx?: PostFxPipeline;
 
   // FPS tracking
   private frameCount = 0;
@@ -103,11 +107,15 @@ export class Engine {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.toneMappingExposure = 1.05;
     container.appendChild(this.renderer.domElement);
 
     // 4. Lighting rig
-    this.setupLights();
+    // 4. Lighting rig — three-point HD-2D rig (key/fill/rim) with player-following shadows
+    this.lighting = new LightingDirector(this.scene);
+
+    // 4.1 Post-processing pipeline: bloom for emissives + HD-2D grade pass
+    this.postFx = new PostFxPipeline(this.renderer, this.scene, this.camera);
 
     // 5. World construction (conventional 3D geometry + pixel-art textures)
     // Kick off asynchronous sprite preloads (hero, enemies, NPC, billboard props)
@@ -182,28 +190,6 @@ export class Engine {
 
     // Start 60fps render loop
     this.startLoop();
-  }
-
-  private setupLights() {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
-    this.scene.add(ambientLight);
-
-    const sunLight = new THREE.DirectionalLight(0xfffaed, 1.3);
-    sunLight.position.set(40, 70, 30);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 1024;
-    sunLight.shadow.mapSize.height = 1024;
-    sunLight.shadow.camera.near = 1.0;
-    sunLight.shadow.camera.far = 160;
-
-    const d = 35;
-    sunLight.shadow.camera.left = -d;
-    sunLight.shadow.camera.right = d;
-    sunLight.shadow.camera.top = d;
-    sunLight.shadow.camera.bottom = -d;
-    sunLight.shadow.bias = -0.0005;
-
-    this.scene.add(sunLight);
   }
 
   public handlePlayerAttack() {
@@ -500,8 +486,13 @@ export class Engine {
         });
       }
 
-      // 10. Render Scene
-      this.renderer.render(this.scene, this.camera);
+      // 10. Lighting follow + Post-processed render
+      this.lighting.update(this.player.position);
+      if (this.postFx) {
+        this.postFx.render(dt);
+      } else {
+        this.renderer.render(this.scene, this.camera);
+      }
 
       this.animationFrameId = requestAnimationFrame(loop);
     };
@@ -516,6 +507,7 @@ export class Engine {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
+    this.postFx?.setSize(width, height);
   };
 
   public destroy() {
@@ -535,6 +527,8 @@ export class Engine {
     this.particles.dispose();
     this.dungeon.dispose();
     this.terrain.dispose();
+    this.lighting.dispose(this.scene);
+    this.postFx?.dispose();
 
     if (this.renderer.domElement && this.renderer.domElement.parentNode) {
       this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);

@@ -6,6 +6,8 @@ import { ASSET_CATALOG } from './src/engine/assets/catalog';
 import { BillboardCharacter } from './src/engine/graphics/BillboardCharacter';
 import { WEBP_VARIANTS } from './src/engine/assets/webpVariants.generated';
 import { resolveSpriteCandidates } from './src/engine/assets/optimizedSrc';
+import { LightingDirector, DEFAULT_LIGHTING_CONFIG } from './src/engine/graphics/LightingDirector';
+import { DEFAULT_POSTFX_CONFIG } from './src/engine/graphics/PostFx';
 import { Terrain } from './src/engine/world/Terrain';
 import { SPELL_CATALOG } from './src/engine/magic/SpellData';
 import { Player } from './src/engine/entities/Player';
@@ -18,14 +20,14 @@ import { packTextureLoader } from './src/engine/assets/PackTextureLoader';
 
 interface TestResult {
   name: string;
-  category: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J';
+  category: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K';
   passed: boolean;
   details: string;
 }
 
 const results: TestResult[] = [];
 
-function assert(condition: boolean, name: string, category: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J', details: string) {
+function assert(condition: boolean, name: string, category: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K', details: string) {
   results.push({
     name,
     category,
@@ -707,6 +709,72 @@ async function runQASuite() {
 
   testPlayer.dispose();
   magicSys.dispose();
+
+  // ----------------------------------------------------
+  // PRUEBAS K: ILUMINACIÓN Y POSTPROCESADO
+  // ----------------------------------------------------
+  console.log('\n--- SECCIÓN K: ILUMINACIÓN Y POSTPROCESADO ---');
+
+  const lightScene = new THREE.Scene();
+  const lightingDirector = new LightingDirector(lightScene);
+  const lightTypes = new Set(
+    lightScene.children
+      .map((c) => c.constructor.name)
+      .filter((n) => n.includes('Light') || n === 'Object3D')
+  );
+  const rigComplete =
+    lightingDirector.key instanceof THREE.DirectionalLight &&
+    lightingDirector.fill instanceof THREE.DirectionalLight &&
+    lightingDirector.rim instanceof THREE.DirectionalLight &&
+    lightingDirector.hemisphere instanceof THREE.HemisphereLight &&
+    lightTypes.has('HemisphereLight') &&
+    lightScene.children.includes(lightingDirector.key);
+  assert(
+    rigComplete,
+    'K1: Rig de tres puntos HD-2D completo',
+    'K',
+    `Luces en escena: ${lightTypes.size} tipos (key/fill/rim + hemisférica + ambiente).`
+  );
+
+  const keyShadowOk =
+    lightingDirector.key.castShadow &&
+    lightingDirector.key.shadow.mapSize.width === DEFAULT_LIGHTING_CONFIG.key.shadow.mapSize &&
+    lightingDirector.key.shadow.mapSize.width === 2048 &&
+    lightingDirector.key.shadow.camera.right === DEFAULT_LIGHTING_CONFIG.key.shadow.orthoExtent;
+  assert(
+    keyShadowOk,
+    'K2: Sombras direccionales de alta resolución (2048px, ortho 45)',
+    'K',
+    `mapSize=${lightingDirector.key.shadow.mapSize.width}x${lightingDirector.key.shadow.mapSize.height}, orthoExtent=${lightingDirector.key.shadow.camera.right}.`
+  );
+
+  const playerAnchor = new THREE.Vector3(37, 0, -12);
+  lightingDirector.update(playerAnchor);
+  const shadowCentred =
+    Math.abs(lightingDirector.keyTarget.position.x - playerAnchor.x) < 1e-6 &&
+    Math.abs(lightingDirector.key.position.x - (playerAnchor.x + DEFAULT_LIGHTING_CONFIG.key.offset[0])) < 1e-6 &&
+    Math.abs(lightingDirector.key.position.z - (playerAnchor.z + DEFAULT_LIGHTING_CONFIG.key.offset[2])) < 1e-6;
+  assert(
+    shadowCentred,
+    'K3: Sombras siguen al jugador (shadow-cascade por posición)',
+    'K',
+    `El frustum de sombra queda centrado en el héroe (${playerAnchor.x}, ${playerAnchor.z}) manteniendo offset fijo.`
+  );
+  lightingDirector.dispose(lightScene);
+
+  const postfxConfigSane =
+    DEFAULT_POSTFX_CONFIG.bloomThreshold > 0 &&
+    DEFAULT_POSTFX_CONFIG.bloomThreshold <= 1 &&
+    DEFAULT_POSTFX_CONFIG.bloomStrength > 0 &&
+    DEFAULT_POSTFX_CONFIG.saturation >= 1 &&
+    DEFAULT_POSTFX_CONFIG.vignetteStrength > 0 &&
+    DEFAULT_POSTFX_CONFIG.contrast >= 1;
+  assert(
+    postfxConfigSane,
+    'K4: Pipeline post-proceso configurado',
+    'K',
+    `Bloom threshold=${DEFAULT_POSTFX_CONFIG.bloomThreshold}, strength=${DEFAULT_POSTFX_CONFIG.bloomStrength}, grade: sat=${DEFAULT_POSTFX_CONFIG.saturation}, contraste=${DEFAULT_POSTFX_CONFIG.contrast}.`
+  );
 
   console.log('\n====================================================');
   const total = results.length;
