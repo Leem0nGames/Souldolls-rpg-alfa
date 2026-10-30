@@ -33,11 +33,11 @@ export class ChunkManager {
       // Vite worker
       this.worker = new Worker(new URL('../workers/chunk.worker.ts', import.meta.url), { type: 'module' });
       this.worker.onmessage = (e: MessageEvent<any>) => {
-        const { cx, cz, cells, chunkSize, worldSize, heights } = e.data;
+        const { cx, cz, cells, chunkSize, worldSize, heights, placements } = e.data;
         const k = `${cx},${cz}`;
         this.pending.delete(k);
         if (this.chunks.has(k)) return;
-        const data = { cx, cz, cells, chunkSize, worldSize, heights: new Float32Array(heights) };
+        const data = { cx, cz, cells, chunkSize, worldSize, heights: new Float32Array(heights), placements: placements ?? [] };
         const chunk = new Chunk(data as any, this.desiredLod(this.chunkDist(cx, cz, 0, 0)));
         this.chunks.set(k, chunk);
         this.scene.add(chunk.mesh);

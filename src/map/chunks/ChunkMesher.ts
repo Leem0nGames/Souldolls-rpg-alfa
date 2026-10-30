@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { ChunkData } from './ChunkTypes';
-import { packTextureLoader } from '../../engine/assets/PackTextureLoader';
 
 export function buildChunkMesh(data: ChunkData, stride: number = 1): THREE.Mesh {
   const cells = data.cells;
@@ -51,15 +50,10 @@ export function buildChunkMesh(data: ChunkData, stride: number = 1): THREE.Mesh 
   geo.computeVertexNormals();
   geo.computeBoundingSphere();
 
-  const terrainTexture = packTextureLoader.getSubTexture('terrain_minecraft_grass', {
-    repeatX: 1,
-    repeatY: 1,
-  });
   const mat = new THREE.MeshStandardMaterial({
-    map: terrainTexture,
     vertexColors: true,
-    roughness: 0.95,
-    metalness: 0.0,
+    roughness: 0.9,
+    metalness: 0.05,
     flatShading: false,
   });
   const mesh = new THREE.Mesh(geo, mat);
