@@ -993,7 +993,7 @@ export class Environment {
     const pathStart = new THREE.Vector3(18, 0, -16);
     const pathEnd = new THREE.Vector3(6, 0, -19);
     const pathMid = new THREE.Vector3().addVectors(pathStart, pathEnd).multiplyScalar(0.5);
-    const pathMat = new THREE.MeshStandardMaterial({ map: mansionCobbleTex, roughness: 0.9, metalness: 0.02 });
+    const pathMat = new THREE.MeshStandardMaterial({ map: packTextureLoader.getSubTexture('terrain_minecraft_cobble', { repeatX: 1, repeatY: 1 }), roughness: 0.9, metalness: 0.02 });
     const pathMesh = new THREE.Mesh(new THREE.PlaneGeometry(pathStart.distanceTo(pathEnd), 2.6), pathMat);
     pathMesh.rotation.x = -Math.PI / 2;
     pathMesh.position.set(pathMid.x, terrain.getHeightAt(pathMid.x, pathMid.z), pathMid.z);

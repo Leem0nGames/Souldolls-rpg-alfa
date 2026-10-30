@@ -103,3 +103,17 @@
 2. ~~Instancing~~ **COMPLETADO** (flores + setas vía `InstancedBillboard`).
 3. ~~Mipmapping~~ **COMPLETADO** (NearestMipmapLinear en sub-texturas repetitivas).
 4. Considerar `OnBeforeRender` per-frame updates UV si el número de billboards animados crece (hoy el coste es trivial).
+
+## 10. Suelo con tiles de Minecraft (implementado 2026-10-30)
+
+### Cambios
+- Tiles descargados desde `PrismarineJS/minecraft-assets` (rama HEAD, datos `data/26.1/blocks/`, fuente en GitHub): `grass_block_top.png` y `cobblestone.png` (convertidos a PNG RGBA 16×16 y añadidos a `public/assets/pack/` como `Minecraft_GrassBlock.png` / `Minecraft_Cobblestone.png`).
+
+### Integración
+- Nuevas regiones `terrain_minecraft_grass` y `terrain_minecraft_cobble` en `PackTextureLoader` (`AtlasRegionKey` + `PACK_ATLAS_REGIONS`).
+- `Terrain.ts` usa `terrain_minecraft_grass` → suelo principal con tile de **grass block** de Minecraft.
+- Sendero de la villa (`spawnRuralHub`) usa `terrain_minecraft_cobble` → **cobble** de Minecraft.
+
+### QA (sección J)
+- **J8: Suelo con tiles de Minecraft** — regiones + archivos descargados validados. ✅ PASS.
+- **J1** actualizado: pack con **31/31** archivos PNG. ✅ PASS.

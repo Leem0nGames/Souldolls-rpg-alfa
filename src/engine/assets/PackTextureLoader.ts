@@ -25,6 +25,8 @@ export type AtlasRegionKey =
   | 'terrain_grass'
   | 'terrain_dirt'
   | 'terrain_cobble'
+  | 'terrain_minecraft_grass'
+  | 'terrain_minecraft_cobble'
   | 'wall_stone_blocks'
   | 'wall_stone_dark'
   | 'wall_timber_wood'
@@ -103,6 +105,24 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     height: 16,
     bg: '#4a3728',
     fallbackType: 'dungeon_floor',
+  },
+  terrain_minecraft_grass: {
+    file: 'Minecraft_GrassBlock.png',
+    x: 0,
+    y: 0,
+    width: 16,
+    height: 16,
+    bg: '#7cbd63',
+    fallbackType: 'terrain',
+  },
+  terrain_minecraft_cobble: {
+    file: 'Minecraft_Cobblestone.png',
+    x: 0,
+    y: 0,
+    width: 16,
+    height: 16,
+    bg: '#4a4846',
+    fallbackType: 'terrain',
   },
 
   // Walls & Architecture (from Walls.png 672x800)

@@ -18,7 +18,7 @@ import { Dungeon } from './src/engine/world/Dungeon';
 import { Environment } from './src/engine/world/Environment';
 
 import * as fs from 'fs';
-import { packTextureLoader } from './src/engine/assets/PackTextureLoader';
+import { packTextureLoader, PACK_ATLAS_REGIONS } from './src/engine/assets/PackTextureLoader';
 
 interface TestResult {
   name: string;
@@ -654,10 +654,10 @@ async function runQASuite() {
   const packDir = './public/assets/pack';
   const packFiles = fs.existsSync(packDir) ? fs.readdirSync(packDir).filter((f) => f.endsWith('.png')) : [];
   assert(
-    packFiles.length === 29,
+    packFiles.length === 31,
     'J1: Disponibilidad y organización del Pack en public/assets/pack/',
     'J',
-    `Localizados ${packFiles.length}/29 archivos PNG organizados con nombres originales preservados.`
+    `Localizados ${packFiles.length}/31 archivos PNG organizados con nombres originales preservados.`
   );
 
   // J2: Filtrado Pixel Art NearestFilter en PackTextureLoader
@@ -721,6 +721,26 @@ async function runQASuite() {
   dIntegrated.dispose();
   tIntegrated.dispose();
   dTestScene.clear();
+
+  // J8: Suelo con tiles de Minecraft (grass block top + cobble) descargados desde GitHub
+  const mcGrassRegion = PACK_ATLAS_REGIONS['terrain_minecraft_grass'];
+  const mcCobbleRegion = PACK_ATLAS_REGIONS['terrain_minecraft_cobble'];
+  const mcGrassTileOk =
+    mcGrassRegion.file === 'Minecraft_GrassBlock.png' &&
+    mcGrassRegion.width === 16 &&
+    mcGrassRegion.height === 16;
+  const mcCobbleTileOk =
+    mcCobbleRegion.file === 'Minecraft_Cobblestone.png' &&
+    mcCobbleRegion.width === 16 &&
+    mcCobbleRegion.height === 16;
+  const mcGrassFileExists = fs.existsSync(`./public/assets/pack/${mcGrassRegion.file}`);
+  const mcCobbleFileExists = fs.existsSync(`./public/assets/pack/${mcCobbleRegion.file}`);
+  assert(
+    mcGrassTileOk && mcCobbleTileOk && mcGrassFileExists && mcCobbleFileExists,
+    'J8: Suelo con tiles de Minecraft (grass block + cobble) desde GitHub',
+    'J',
+    `Regiones terrain_minecraft_grass/cobble -> ${mcGrassRegion.file}/${mcCobbleRegion.file} (16x16 px). Tiles descargados de PrismarineJS/minecraft-assets (v26.1).`
+  );
 
   testPlayer.dispose();
   magicSys.dispose();

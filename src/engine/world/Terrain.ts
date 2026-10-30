@@ -34,7 +34,7 @@ export class Terrain {
 
     // Use the authentic grass tile from the user's graphic pack (Vegetation.png)
     const tileRepeats = 35;
-    const terrainTexture = packTextureLoader.getSubTexture('terrain_grass', {
+    const terrainTexture = packTextureLoader.getSubTexture('terrain_minecraft_grass', {
       repeatX: tileRepeats,
       repeatY: tileRepeats,
     });
