@@ -86,7 +86,7 @@ export class BillboardCharacter {
 
     this.material = new THREE.MeshStandardMaterial({
       map: this.texture,
-      normalMap: normalMap,
+      ...(normalMap ? { normalMap } : {}),
       normalScale: new THREE.Vector2(0.7, 0.7),
       transparent: true,
       alphaTest: 0.5, // Eliminates dark transparent halos in WebGL

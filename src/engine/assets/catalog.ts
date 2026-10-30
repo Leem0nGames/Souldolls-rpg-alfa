@@ -9,12 +9,12 @@ export const ASSET_CATALOG: Record<string, SpriteAssetDefinition> = {
   // --- CHARACTERS ---
   hero_adventurer: {
     id: 'hero_adventurer',
-    name: 'Aventurero del Alma',
+    name: 'Luchador Errante',
     category: 'characters',
-    src: '/assets/characters/hero_adventurer.png',
+    src: '/assets/aistudio/fighter_walk.png',
     fallbackKey: 'hero_spritesheet',
-    frameWidth: 32,
-    frameHeight: 48,
+    frameWidth: 173.5,
+    frameHeight: 258.5,
     animation: {
       cols: 4,
       rows: 4,
@@ -34,8 +34,8 @@ export const ASSET_CATALOG: Record<string, SpriteAssetDefinition> = {
       x: 0.5,
       y: 0.0, // Anchored at feet
     },
-    license: 'CC0 - SoulDolls Original Asset',
-    description: 'Protagonista aventurero con armadura azul y capa carmesí.',
+    license: 'User-provided asset',
+    description: 'Protagonista luchador con capa y animaciones de movimiento en cuatro direcciones.',
   },
 
   // --- ENEMIES ---

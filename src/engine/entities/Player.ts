@@ -50,8 +50,7 @@ export class Player {
     // 1. Create Billboard Character using SpriteLoader and Catalog
     const def = ASSET_CATALOG.hero_adventurer;
     const heroTex = spriteLoader.getTexture('hero_adventurer');
-    const heroNorm = spriteLoader.getNormalMap('hero_adventurer');
-    this.billboard = new BillboardCharacter(heroTex, def.scale.width, def.scale.height, def.animation, heroNorm);
+    this.billboard = new BillboardCharacter(heroTex, def.scale.width, def.scale.height, def.animation);
     this.mesh.add(this.billboard.mesh);
 
     // 2. 3D Arc Slash Effect Mesh for combat feedback

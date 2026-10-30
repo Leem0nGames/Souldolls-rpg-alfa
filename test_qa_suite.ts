@@ -70,6 +70,17 @@ async function runQASuite() {
     `wrapS y wrapT configurados en RepeatWrapping para admitir offsets de spritesheets.`
   );
 
+  const heroDef = ASSET_CATALOG.hero_adventurer;
+  assert(
+    heroDef.src === '/assets/aistudio/fighter_walk.png' &&
+      fs.existsSync(`public${heroDef.src}`) &&
+      heroDef.frameWidth * heroDef.animation.cols === 694 &&
+      heroDef.frameHeight * heroDef.animation.rows === 1034,
+    'A4: Spritesheet del jugador conectado',
+    'A',
+    'La hoja del jugador existe, coincide con las dimensiones del archivo y conserva su cuadrícula 4x4.'
+  );
+
   let catalogValid = true;
   for (const [id, def] of Object.entries(ASSET_CATALOG)) {
     if (!def.id || !def.category || !def.scale || !def.scale.width || !def.scale.height) {
@@ -92,7 +103,7 @@ async function runQASuite() {
   }
   assert(
     catalogValid,
-    'A4: Validación de Integridad del Catálogo',
+    'A5: Validación de Integridad del Catálogo',
     'A',
     `Todos los ${Object.keys(ASSET_CATALOG).length} assets en catalog.ts poseen escalas, dimensiones y mappings válidos.`
   );

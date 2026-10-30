@@ -11,6 +11,8 @@ import { SpriteSheetGenerator } from '../graphics/SpriteSheetGenerator';
 export class SpriteLoader {
   private static instance: SpriteLoader;
   private textureCache = new Map<string, THREE.Texture>();
+  private fallbackTextures = new Map<string, THREE.Texture>();
+  private pendingLoads = new Map<string, Promise<THREE.Texture>>();
   private loader = new THREE.TextureLoader();
 
   public static getInstance(): SpriteLoader {
@@ -52,11 +54,21 @@ export class SpriteLoader {
    * If the external file does not exist or fails, falls back gracefully.
    */
   public async loadSprite(def: SpriteAssetDefinition): Promise<THREE.Texture> {
-    if (this.textureCache.has(def.id)) {
-      return this.textureCache.get(def.id)!;
+    const cached = this.textureCache.get(def.id);
+    if (cached) return cached;
+
+    const pending = this.pendingLoads.get(def.id);
+    if (pending) return pending;
+
+    if (typeof document === 'undefined') {
+      const fallback =
+        this.fallbackTextures.get(def.id) ?? this.getFallbackTexture(def.fallbackKey);
+      this.fallbackTextures.set(def.id, fallback);
+      this.textureCache.set(def.id, fallback);
+      return fallback;
     }
 
-    return new Promise((resolve) => {
+    const request = new Promise<THREE.Texture>((resolve) => {
       this.loader.load(
         def.src,
         (loadedTex) => {
@@ -67,6 +79,7 @@ export class SpriteLoader {
           loadedTex.wrapT = THREE.RepeatWrapping;
           loadedTex.colorSpace = THREE.SRGBColorSpace;
           this.textureCache.set(def.id, loadedTex);
+          this.pendingLoads.delete(def.id);
           resolve(loadedTex);
         },
         undefined,
@@ -75,12 +88,17 @@ export class SpriteLoader {
             ? String((err as { message: unknown }).message) 
             : 'Archivo no encontrado. Utilizando textura procedural nativa.';
           console.warn(`[SpriteLoader] Fallback activado para "${def.id}" (${def.src}):`, errMsg);
-          const fallback = this.getFallbackTexture(def.fallbackKey);
+          const fallback =
+            this.fallbackTextures.get(def.id) ?? this.getFallbackTexture(def.fallbackKey);
+          this.fallbackTextures.set(def.id, fallback);
           this.textureCache.set(def.id, fallback);
+          this.pendingLoads.delete(def.id);
           resolve(fallback);
         }
       );
     });
+    this.pendingLoads.set(def.id, request);
+    return request;
   }
 
   /**
@@ -99,12 +117,13 @@ export class SpriteLoader {
       return SpriteSheetGenerator.createHeroSpriteSheet();
     }
 
-    // Assign fallback immediately for instantaneous boot
-    const fallback = this.getFallbackTexture(def.fallbackKey);
-    this.textureCache.set(assetId, fallback);
+    // Keep an immediate fallback available while the external image loads.
+    const fallback =
+      this.fallbackTextures.get(assetId) ?? this.getFallbackTexture(def.fallbackKey);
+    this.fallbackTextures.set(assetId, fallback);
 
     // Attempt external load in background
-    this.loadSprite(def).then((loadedTex) => {
+    void this.loadSprite(def).then((loadedTex) => {
       if (loadedTex !== fallback) {
         fallback.image = loadedTex.image;
         fallback.needsUpdate = true;
@@ -156,8 +175,12 @@ export class SpriteLoader {
   }
 
   public dispose() {
-    this.textureCache.forEach((tex) => tex.dispose());
+    new Set([...this.textureCache.values(), ...this.fallbackTextures.values()]).forEach((tex) =>
+      tex.dispose()
+    );
     this.textureCache.clear();
+    this.fallbackTextures.clear();
+    this.pendingLoads.clear();
   }
 }
 
