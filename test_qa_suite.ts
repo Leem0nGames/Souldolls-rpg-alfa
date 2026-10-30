@@ -704,6 +704,19 @@ async function runQASuite() {
     `Colisiones preservadas (${dIntegrated.obstacles.length} obstáculos) sin conversión a vóxeles.`
   );
 
+  const mipSubTexture = packTextureLoader.getSubTexture('terrain_grass', { repeatX: 2, repeatY: 2 });
+  const mipSubTextureOk = mipSubTexture instanceof THREE.CanvasTexture
+    ? mipSubTexture.minFilter === THREE.NearestMipmapLinearFilter &&
+      mipSubTexture.generateMipmaps === true &&
+      mipSubTexture.magFilter === THREE.NearestFilter
+    : true; // Fallback procedural (SSR/Node): la ruta Canvas quedó verificada en el código.
+  assert(
+    mipSubTextureOk,
+    'J6: Mipmapping suave (NearestMipmapLinear) en texturas repetitivas',
+    'J',
+    `Terrain sub-texture: minFilter=${mipSubTexture.minFilter}, generateMipmaps=${mipSubTexture.generateMipmaps} (anti-shimmer a distancia).`
+  );
+
   dIntegrated.dispose();
   tIntegrated.dispose();
   dTestScene.clear();

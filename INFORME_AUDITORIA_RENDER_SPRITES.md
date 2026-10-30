@@ -75,8 +75,14 @@
 
 - **K7: InstancedBillboard** — count=2, matrices de posición coherentes, update idempotente. ✅ PASS.
 
-## 6. Recomendaciones futuras (no bloqueantes)
+## 7. Mipmapping suave (NearestMipmapLinear) — implementado 2026-10-30
+
+### Cambios
+- `PackTextureLoader.getSubTexture`: `minFilter = NearestMipmapLinearFilter`, `generateMipmaps = true` (magFilter sigue `NearestFilter`).
+- QA J6 valida la ruta canvas (fallback SSR documentado).
+
+## 8. Recomendaciones futuras (no bloqueantes)
 1. Re-exportar la hoja AI con **grid entero** (p. ej. frames de 174×259 px) para eliminar la causa raíz del bleed.
 2. ~~Instancing~~ **COMPLETADO** (flores + setas vía `InstancedBillboard`).
-3. Considerar `NearestMipmapLinear` solo en texturas de suelo/paredes para estabilizar vistas lejanas.
-4. Evaluar `OnBeforeRender` per-frame updates UV si el número de billboards animados crece (hoy el coste es trivial).
+3. ~~Mipmapping~~ **COMPLETADO** (NearestMipmapLinear en sub-texturas repetitivas).
+4. Considerar `OnBeforeRender` per-frame updates UV si el número de billboards animados crece (hoy el coste es trivial).

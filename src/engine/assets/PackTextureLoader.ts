@@ -514,8 +514,8 @@ export class PackTextureLoader {
     if (canvas) {
       const canvasTex = new THREE.CanvasTexture(canvas);
       canvasTex.magFilter = THREE.NearestFilter;
-      canvasTex.minFilter = THREE.NearestFilter;
-      canvasTex.generateMipmaps = false;
+      canvasTex.minFilter = THREE.NearestMipmapLinearFilter;
+      canvasTex.generateMipmaps = true;
       canvasTex.wrapS = options.wrapS ?? THREE.RepeatWrapping;
       canvasTex.wrapT = options.wrapT ?? THREE.RepeatWrapping;
       canvasTex.colorSpace = THREE.SRGBColorSpace;
