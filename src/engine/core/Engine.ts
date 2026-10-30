@@ -179,25 +179,32 @@ export class Engine {
   }
 
   private setupLights() {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+    // 1. Warm Neutral Ambient Light to preserve pixel-art color integrity
+    const ambientLight = new THREE.AmbientLight(0xfff4e0, 0.55); 
     this.scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0xfffaed, 1.3);
+    // 2. Main Sun Light (Warm Key Light)
+    const sunLight = new THREE.DirectionalLight(0xfffaed, 1.45);
     sunLight.position.set(40, 70, 30);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 1024;
-    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.mapSize.width = 2048; // Increased resolution for crisper pixel shadows
+    sunLight.shadow.mapSize.height = 2048;
     sunLight.shadow.camera.near = 1.0;
     sunLight.shadow.camera.far = 160;
 
-    const d = 35;
+    const d = 45;
     sunLight.shadow.camera.left = -d;
     sunLight.shadow.camera.right = d;
     sunLight.shadow.camera.top = d;
     sunLight.shadow.camera.bottom = -d;
-    sunLight.shadow.bias = -0.0005;
+    sunLight.shadow.bias = -0.0002;
 
     this.scene.add(sunLight);
+
+    // 3. Subtle Cool Fill Light (Professional 3-point lighting trick)
+    const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.4);
+    fillLight.position.set(-40, 20, -30);
+    this.scene.add(fillLight);
   }
 
   public handlePlayerAttack() {

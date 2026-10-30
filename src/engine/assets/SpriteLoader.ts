@@ -50,172 +50,121 @@ export class SpriteLoader {
   }
 
   /**
-   * Asynchronously loads an external sprite by its definition.
-   * If the external file does not exist or fails, falls back gracefully.
+   * Preloads a list of asset IDs into the proxy cache.
    */
-  public async loadSprite(def: SpriteAssetDefinition): Promise<THREE.Texture> {
-    const cached = this.textureCache.get(def.id);
-    if (cached) return cached;
-
-    const pending = this.pendingLoads.get(def.id);
-    if (pending) return pending;
-
-    if (typeof document === 'undefined') {
-      const fallback =
-        this.fallbackTextures.get(def.id) ?? this.getFallbackTexture(def.fallbackKey);
-      this.fallbackTextures.set(def.id, fallback);
-      this.textureCache.set(def.id, fallback);
-      return fallback;
-    }
-
-    const request = new Promise<THREE.Texture>((resolve) => {
-      this.loader.load(
-        def.src,
-        (loadedTex) => {
-          loadedTex.magFilter = THREE.NearestFilter;
-          loadedTex.minFilter = THREE.NearestFilter;
-          loadedTex.generateMipmaps = false;
-          loadedTex.wrapS = THREE.RepeatWrapping;
-          loadedTex.wrapT = THREE.RepeatWrapping;
-          loadedTex.colorSpace = THREE.SRGBColorSpace;
-          this.textureCache.set(def.id, loadedTex);
-          this.pendingLoads.delete(def.id);
-          resolve(loadedTex);
-        },
-        undefined,
-        (err: unknown) => {
-          const errMsg = err && typeof err === 'object' && 'message' in err 
-            ? String((err as { message: unknown }).message) 
-            : 'Archivo no encontrado. Utilizando textura procedural nativa.';
-          console.warn(`[SpriteLoader] Fallback activado para "${def.id}" (${def.src}):`, errMsg);
-          const fallback =
-            this.fallbackTextures.get(def.id) ?? this.getFallbackTexture(def.fallbackKey);
-          this.fallbackTextures.set(def.id, fallback);
-          this.textureCache.set(def.id, fallback);
-          this.pendingLoads.delete(def.id);
-          resolve(fallback);
-        }
-      );
-    });
-    this.pendingLoads.set(def.id, request);
-    return request;
+  public async preloadAssets(assetIds: string[]): Promise<void> {
+    await Promise.all(assetIds.map((id) => this.getTexture(id)));
   }
 
   /**
    * Synchronously obtains the texture for an asset ID.
-   * If not yet cached, returns the guaranteed procedural fallback immediately
-   * and triggers background asynchronous loading for external PNGs.
+   * Uses a persistent proxy CanvasTexture that updates automatically when external PNGs load.
    */
   public getTexture(assetId: string): THREE.Texture {
-    if (this.textureCache.has(assetId)) {
-      return this.textureCache.get(assetId)!;
+    if (this.fallbackTextures.has(assetId)) {
+      return this.fallbackTextures.get(assetId)!;
     }
 
     const def = ASSET_CATALOG[assetId];
     if (!def) {
-      console.warn(`[SpriteLoader] Identificador de recurso no encontrado en el catálogo: "${assetId}"`);
       return SpriteSheetGenerator.createHeroSpriteSheet();
     }
 
-    // Keep an immediate fallback available while the external image loads.
-    const fallback =
-      this.fallbackTextures.get(assetId) ?? this.getFallbackTexture(def.fallbackKey);
-    this.fallbackTextures.set(assetId, fallback);
+    // Create unique proxy for this asset ID
+    const proxy = this.getFallbackTexture(def.fallbackKey).clone();
+    proxy.needsUpdate = true;
+    this.fallbackTextures.set(assetId, proxy);
 
-    // Attempt external load in background
-    void this.loadSprite(def).then((loadedTex) => {
-      if (loadedTex !== fallback) {
-        fallback.image = loadedTex.image;
-        fallback.needsUpdate = true;
+    // Load real asset
+    this.loader.load(def.src, (loadedTex) => {
+      if (proxy.image instanceof HTMLCanvasElement && loadedTex.image) {
+        const canvas = proxy.image;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          canvas.width = loadedTex.image.width;
+          canvas.height = loadedTex.image.height;
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(loadedTex.image, 0, 0);
+          proxy.colorSpace = THREE.SRGBColorSpace;
+          proxy.needsUpdate = true;
+          // Force update for all clones
+          setTimeout(() => { 
+            proxy.colorSpace = THREE.SRGBColorSpace;
+            proxy.needsUpdate = true; 
+          }, 100);
+        }
       }
+      loadedTex.dispose();
     });
 
-    return fallback;
+    return proxy;
   }
 
-  /**
-   * Preloads a list of asset IDs.
-   */
-  public async preloadAssets(assetIds: string[]): Promise<void> {
-    await Promise.all(
-      assetIds.map((id) => {
-        const def = ASSET_CATALOG[id];
-        return def ? this.loadSprite(def) : Promise.resolve();
-      })
-    );
-  }
+
 
   /**
-   * Retrieves the corresponding normal map for an asset ID.
+   * Retrieves the corresponding normal map for an asset ID using the proxy pattern.
    */
   public getNormalMap(assetId: string): THREE.Texture {
     const normalKey = `${assetId}_normal`;
-    if (this.textureCache.has(normalKey)) {
-      return this.textureCache.get(normalKey)!;
+    if (this.fallbackTextures.has(normalKey)) {
+      return this.fallbackTextures.get(normalKey)!;
     }
 
-    let normalTex: THREE.Texture;
+    let proxy: THREE.Texture;
     if (assetId === 'hero_adventurer') {
-      normalTex = SpriteSheetGenerator.createHeroNormalMap();
-      this.loadExternalNormalMap(
-        normalTex,
-        '/assets/aistudio/fighter_walk_normal.png',
-        assetId
-      );
+      proxy = SpriteSheetGenerator.createHeroNormalMap();
+      void this.loadExternalNormalMapIntoProxy(proxy, '/assets/aistudio/fighter_walk_normal.webp', assetId);
     } else if (assetId === 'slime_forest') {
-      normalTex = SpriteSheetGenerator.createEnemyNormalMap();
+      proxy = SpriteSheetGenerator.createEnemyNormalMap();
     } else if (assetId === 'npc_elder_rhogar') {
-      normalTex = SpriteSheetGenerator.createNPCNormalMap();
+      proxy = SpriteSheetGenerator.createNPCNormalMap();
     } else {
       const tex = this.getTexture(assetId);
       if (tex.image instanceof HTMLCanvasElement) {
-        normalTex = SpriteSheetGenerator.generateNormalMap(tex.image);
+        proxy = SpriteSheetGenerator.generateNormalMap(tex.image);
       } else {
-        normalTex = SpriteSheetGenerator.createHeroNormalMap();
+        proxy = SpriteSheetGenerator.createHeroNormalMap();
       }
     }
 
-    this.textureCache.set(normalKey, normalTex);
-    return normalTex;
+    this.fallbackTextures.set(normalKey, proxy);
+    return proxy;
   }
 
-  private loadExternalNormalMap(
-    target: THREE.Texture,
+  private async loadExternalNormalMapIntoProxy(
+    proxy: THREE.Texture,
     src: string,
     assetId: string
-  ): void {
+  ): Promise<void> {
     if (typeof document === 'undefined') return;
 
-    this.loader.load(
-      src,
-      (loadedTex) => {
-        loadedTex.magFilter = THREE.NearestFilter;
-        loadedTex.minFilter = THREE.NearestFilter;
-        loadedTex.generateMipmaps = false;
-        loadedTex.wrapS = THREE.RepeatWrapping;
-        loadedTex.wrapT = THREE.RepeatWrapping;
-        loadedTex.colorSpace = THREE.NoColorSpace;
-        target.image = loadedTex.image;
-        target.needsUpdate = true;
-        loadedTex.dispose();
-      },
-      undefined,
-      (err: unknown) => {
-        const errMsg = err && typeof err === 'object' && 'message' in err
-          ? String((err as { message: unknown }).message)
-          : 'Archivo no encontrado. Se conserva el mapa normal procedural.';
-        console.warn(`[SpriteLoader] Mapa normal no disponible para "${assetId}" (${src}):`, errMsg);
+    try {
+      const loadedTex = await this.loader.loadAsync(src);
+      if (proxy.image instanceof HTMLCanvasElement && loadedTex.image) {
+        const canvas = proxy.image;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          canvas.width = loadedTex.image.width;
+          canvas.height = loadedTex.image.height;
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(loadedTex.image, 0, 0);
+          proxy.colorSpace = THREE.NoColorSpace; // Normal maps should be Linear/NoColorSpace
+          proxy.needsUpdate = true;
+          setTimeout(() => { proxy.needsUpdate = true; }, 100);
+        }
       }
-    );
+      loadedTex.dispose();
+    } catch (err) {
+      console.warn(`[SpriteLoader] Mapa normal no disponible para "${assetId}" (${src}).`);
+    }
   }
 
   public dispose() {
-    new Set([...this.textureCache.values(), ...this.fallbackTextures.values()]).forEach((tex) =>
+    new Set([...this.fallbackTextures.values()]).forEach((tex) =>
       tex.dispose()
     );
-    this.textureCache.clear();
     this.fallbackTextures.clear();
-    this.pendingLoads.clear();
   }
 }
 

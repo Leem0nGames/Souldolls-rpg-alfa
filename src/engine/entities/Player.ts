@@ -4,6 +4,9 @@ import { WorldObstacle } from '../world/Environment';
 import { BillboardCharacter } from '../graphics/BillboardCharacter';
 import { spriteLoader } from '../assets/SpriteLoader';
 import { ASSET_CATALOG } from '../assets/catalog';
+import { StepParticles } from '../graphics/StepParticles';
+import { SlashParticles } from '../graphics/SlashParticles';
+import { PALETTE } from '../graphics/Palette';
 
 /**
  * Player represents the controllable 2.5D pixel-art adventurer in the 3D world.
@@ -33,13 +36,18 @@ export class Player {
   public isInvulnerable = false;
 
   private billboard: BillboardCharacter;
-  private slashMesh: THREE.Mesh;
+  private stepParticles: StepParticles;
+  private slashParticles: SlashParticles;
+  private attackPointLight: THREE.PointLight;
 
   // Animation clocks & states
   private attackTimer = 0;
   private dodgeTimer = 0;
   private invulnerableTimer = 0;
   private dodgeDirection = new THREE.Vector3();
+  
+  private stepParticles: StepParticles;
+  private stepTimer = 0;
 
   constructor(scene: THREE.Scene, startX = 0, startZ = 0, terrain: Terrain) {
     this.mesh = new THREE.Group();
@@ -60,18 +68,13 @@ export class Player {
     );
     this.mesh.add(this.billboard.mesh);
 
-    // 2. 3D Arc Slash Effect Mesh for combat feedback
-    const slashGeo = new THREE.RingGeometry(0.8, 1.4, 16, 1, 0, Math.PI * 0.8);
-    const slashMat = new THREE.MeshBasicMaterial({
-      color: 0x93c5fd,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.0,
-    });
-    this.slashMesh = new THREE.Mesh(slashGeo, slashMat);
-    this.slashMesh.rotation.x = Math.PI / 2;
-    this.slashMesh.position.y = 1.0;
-    this.mesh.add(this.slashMesh);
+    this.stepParticles = new StepParticles(scene);
+    this.slashParticles = new SlashParticles(scene);
+
+    // 3. Dynamic Attack Light (Professional trick for normal map pop)
+    this.attackPointLight = new THREE.PointLight(0x93c5fd, 0, 5);
+    this.attackPointLight.position.set(0, 1.2, 0.5);
+    this.mesh.add(this.attackPointLight);
 
     scene.add(this.mesh);
   }
@@ -80,11 +83,14 @@ export class Player {
     if (this.isAttacking) return;
     this.isAttacking = true;
     this.attackTimer = 0.28;
-    this.billboard.triggerHitFlash(0.08);
+    this.billboard.triggerHitFlash(0.08, 0xffffff); // White flash for swing intensity
 
-    // Flash sword slash arc
-    (this.slashMesh.material as THREE.MeshBasicMaterial).opacity = 0.85;
-    this.slashMesh.rotation.z = this.rotationY + Math.PI / 4;
+    // Pulse the attack light to catch normals
+    this.attackPointLight.intensity = 2.5;
+
+    // Emit slash particles in the direction player is facing
+    const forward = new THREE.Vector3(Math.sin(this.rotationY), 0, Math.cos(this.rotationY));
+    this.slashParticles.emitSlash(this.position, forward);
   }
 
   public triggerDodge(moveDir: THREE.Vector3, cameraYaw = 0) {
@@ -107,6 +113,9 @@ export class Player {
     } else {
       this.dodgeDirection.set(Math.sin(this.rotationY), 0, Math.cos(this.rotationY)).normalize();
     }
+
+    // Burst of soul particles on dodge start
+    this.stepParticles.emit(this.position, 8, 0x9B6BFF);
   }
 
   public takeDamage(amount: number): boolean {
@@ -153,14 +162,12 @@ export class Player {
     // 3. Handle Attack State
     if (this.isAttacking) {
       this.attackTimer -= dt;
-      const slashProgress = 1 - Math.max(0, this.attackTimer / 0.28);
-      const slashMat = this.slashMesh.material as THREE.MeshBasicMaterial;
-      slashMat.opacity = Math.max(0, (1 - slashProgress) * 0.9);
-      this.slashMesh.scale.setScalar(1 + slashProgress * 0.4);
-
+      // Fade out attack light
+      this.attackPointLight.intensity = THREE.MathUtils.lerp(this.attackPointLight.intensity, 0, dt * 15);
+      
       if (this.attackTimer <= 0) {
         this.isAttacking = false;
-        slashMat.opacity = 0.0;
+        this.attackPointLight.intensity = 0;
       }
     }
 
@@ -231,10 +238,24 @@ export class Player {
 
     // 7. Update Billboard Sprite directly with input handler without inversion
     this.billboard.updateWithInput(dt, this.isMoving, moveInput, cameraYaw);
+
+    // 8. Update Particles
+    this.stepParticles.update(dt);
+    this.slashParticles.update(dt);
+    
+    if (this.isMoving && !this.isDodging) {
+      this.stepTimer += dt;
+      if (this.stepTimer >= 0.2) {
+        this.stepTimer = 0;
+        this.stepParticles.emit(this.position, 2);
+      }
+    } else if (this.isDodging) {
+      this.stepParticles.emit(this.position, 1, 0xB691FF);
+    }
   }
 
   private checkCollision(x: number, z: number, obstacles: WorldObstacle[]): boolean {
-    const playerRadius = 0.5;
+    const playerRadius = 0.65; // Refined for larger fighter_walk sprite
     for (const obs of obstacles) {
       const distSq = (x - obs.x) ** 2 + (z - obs.z) ** 2;
       const minDist = playerRadius + obs.radius;
@@ -247,7 +268,7 @@ export class Player {
 
   public dispose() {
     this.billboard.dispose();
-    this.slashMesh.geometry.dispose();
-    (this.slashMesh.material as THREE.Material).dispose();
+    this.stepParticles.dispose();
+    this.slashParticles.dispose();
   }
 }

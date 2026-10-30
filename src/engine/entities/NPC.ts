@@ -45,7 +45,7 @@ export class NPC {
     this.mesh.add(this.billboard.mesh);
 
     // 2. 3D Floating Quest Rune (Rotates and bobs in 3D space above sprite)
-    const runeGeo = new THREE.OctahedronGeometry(0.24, 0);
+    const runeGeo = new THREE.IcosahedronGeometry(0.24, 0);
     this.runeMaterial = new THREE.MeshStandardMaterial({
       color: 0xffd700,
       emissive: 0xb58b00,

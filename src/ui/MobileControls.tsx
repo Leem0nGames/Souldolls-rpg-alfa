@@ -82,9 +82,11 @@ export const MobileControls: React.FC<MobileControlsProps> = ({
             onDodge();
           }}
           onClick={onDodge}
-          className="touch-button touch-control w-14 h-14 bg-[#1B2A2A] border-2 border-[#5FE3D2] text-[#5FE3D2] shadow-[4px_4px_0px_#000000] flex items-center justify-center cursor-pointer active:translate-x-1 active:translate-y-1 active:shadow-none"
+          className="touch-button touch-control w-14 h-14 bg-[#1B2A2A] border-2 border-[#32A89D] text-[#85EADD] shadow-[4px_4px_0px_#000000] flex items-center justify-center cursor-pointer active:translate-x-1 active:translate-y-1 active:shadow-none relative"
           title="Dodge (Shift)"
         >
+          <div className="absolute -top-1 -left-1 w-1.5 h-1.5 bg-[#85EADD]" />
+          <div className="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-[#85EADD]" />
           <Wind className="w-6 h-6" />
         </button>
 
@@ -95,9 +97,11 @@ export const MobileControls: React.FC<MobileControlsProps> = ({
             onAction();
           }}
           onClick={onAction}
-          className="touch-button touch-control w-14 h-14 bg-[#3B2B1A] border-2 border-[#E8B84A] text-[#E8B84A] shadow-[4px_4px_0px_#000000] flex items-center justify-center cursor-pointer active:translate-x-1 active:translate-y-1 active:shadow-none mb-10"
+          className="touch-button touch-control w-14 h-14 bg-[#3B2B1A] border-2 border-[#A67F46] text-[#F4D073] shadow-[4px_4px_0px_#000000] flex items-center justify-center cursor-pointer active:translate-x-1 active:translate-y-1 active:shadow-none mb-10 relative"
           title="Action (E)"
         >
+          <div className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-[#F4D073]" />
+          <div className="absolute -bottom-1 -left-1 w-1.5 h-1.5 bg-[#F4D073]" />
           <Sparkles className="w-6 h-6" />
         </button>
 
@@ -108,10 +112,15 @@ export const MobileControls: React.FC<MobileControlsProps> = ({
             onAttack();
           }}
           onClick={onAttack}
-          className="touch-button touch-control w-18 h-18 bg-[#6E0C25] border-2 border-[#FF8FB8] text-[#FFF9F0] shadow-[4px_4px_0px_#000000] flex items-center justify-center cursor-pointer active:translate-x-1 active:translate-y-1 active:shadow-none"
+          className="touch-button touch-control w-20 h-20 bg-[#4A0B18] border-2 border-[#C2234B] text-[#FFF9F0] shadow-[6px_6px_0px_#000000] flex items-center justify-center cursor-pointer active:translate-x-1 active:translate-y-1 active:shadow-none relative group"
           title="Attack (Space)"
         >
-          <Sword className="w-8 h-8 text-[#FF8FB8]" />
+          {/* Decorative Corners */}
+          <div className="absolute -top-1 -left-1 w-2 h-2 bg-[#FF8FB8]" />
+          <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#FF8FB8]" />
+          <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-[#FF8FB8]" />
+          <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-[#FF8FB8]" />
+          <Sword className="w-10 h-10 text-[#FF8FB8] group-active:scale-90 transition-transform" />
         </button>
       </div>
     </div>

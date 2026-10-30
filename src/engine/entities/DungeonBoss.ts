@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { Terrain } from '../world/Terrain';
 import { PALETTE } from '../graphics/Palette';
+import { StepParticles } from '../graphics/StepParticles';
+import { SlashParticles } from '../graphics/SlashParticles';
 
 /**
  * DungeonBoss represents the spectral guardian of the Crypt of Lost Souls ("Guardián Espectral").
@@ -27,6 +29,9 @@ export class DungeonBoss {
   private attackCooldown = 0;
   private telegraphTimer = 0;
   private pulseTimer = 0;
+  private stepParticles: StepParticles;
+  private slashParticles: SlashParticles;
+  private stepTimer = 0;
 
   constructor(scene: THREE.Scene, startX: number, startZ: number, terrain?: Terrain) {
     this.mesh = new THREE.Group();
@@ -89,6 +94,9 @@ export class DungeonBoss {
     );
     this.hpBarGroup.add(this.hpBarFill);
     this.mesh.add(this.hpBarGroup);
+
+    this.stepParticles = new StepParticles(scene);
+    this.slashParticles = new SlashParticles(scene);
 
     scene.add(this.mesh);
   }
@@ -165,6 +173,12 @@ export class DungeonBoss {
         this.isTelegraphing = false;
         mat.opacity = 0;
         this.attackCooldown = this.phase === 2 ? 3.5 : 5.0;
+
+        // Radial spectral burst
+        for (let i = 0; i < 4; i++) {
+          const ang = (i / 4) * Math.PI * 2;
+          this.slashParticles.emitSlash(this.position, new THREE.Vector3(Math.sin(ang), 0, Math.cos(ang)), 0x9B6BFF);
+        }
       }
     }
 
@@ -175,9 +189,20 @@ export class DungeonBoss {
 
     // HP bar faces camera
     this.hpBarGroup.rotation.y = cameraYaw;
+
+    // Update Particles
+    this.stepParticles.update(dt);
+    this.slashParticles.update(dt);
+    this.stepTimer += dt;
+    if (this.stepTimer >= 0.15) {
+      this.stepTimer = 0;
+      this.stepParticles.emit(this.position.clone().add(new THREE.Vector3(0, -0.8, 0)), 1, 0x9B6BFF);
+    }
   }
 
   public dispose() {
+    this.stepParticles.dispose();
+    this.slashParticles.dispose();
     this.bodyMesh.geometry.dispose();
     (this.bodyMesh.material as THREE.Material).dispose();
     this.coreMesh.geometry.dispose();

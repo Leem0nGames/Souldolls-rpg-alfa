@@ -77,26 +77,35 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({ onMove, size =
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
-      className="touch-control relative bg-[#0B080E] border-2 border-[#8A6A3B] shadow-[4px_4px_0px_#000000] flex items-center justify-center select-none touch-none"
+      className="touch-control relative bg-[#0B080E] border-2 border-[#8A6A3B] shadow-[6px_6px_0px_#000000] flex items-center justify-center select-none touch-none"
       style={{ width: `${size}px`, height: `${size}px` }}
     >
+      {/* Decorative Corners for Joystick Base */}
+      <div className="absolute -top-1 -left-1 w-3 h-3 bg-[#8A6A3B]" />
+      <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#8A6A3B]" />
+      <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-[#8A6A3B]" />
+      <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-[#8A6A3B]" />
+
       {/* Outer directional indicators */}
-      <div className="absolute inset-2 border border-dashed border-[#6B5C70]" />
-      <div className="absolute top-2 w-2 h-2 bg-[#E8B84A]" />
-      <div className="absolute bottom-2 w-2 h-2 bg-[#E8B84A]" />
-      <div className="absolute left-2 w-2 h-2 bg-[#E8B84A]" />
-      <div className="absolute right-2 w-2 h-2 bg-[#E8B84A]" />
+      <div className="absolute inset-3 border-2 border-dashed border-[#3D3242] rounded-full opacity-40" />
+      
+      {/* Compass markers */}
+      <div className="absolute top-2 w-3 h-1.5 bg-[#E8B84A] shadow-[1px_1px_0px_#000]" />
+      <div className="absolute bottom-2 w-3 h-1.5 bg-[#E8B84A] shadow-[1px_1px_0px_#000]" />
+      <div className="absolute left-2 w-1.5 h-3 bg-[#E8B84A] shadow-[1px_1px_0px_#000]" />
+      <div className="absolute right-2 w-1.5 h-3 bg-[#E8B84A] shadow-[1px_1px_0px_#000]" />
 
       {/* Thumb Knob */}
       <div
-        className={`w-12 h-12 bg-[#2A1F2D] border-2 border-[#E8B84A] shadow-[2px_2px_0px_#000000] flex items-center justify-center ${
-          active ? 'bg-[#8A6A3B]' : ''
+        className={`w-14 h-14 bg-[#2A1F2D] border-2 border-[#E8B84A] shadow-[3px_3px_0px_#000000] flex items-center justify-center transition-transform duration-75 ${
+          active ? 'scale-110' : ''
         }`}
         style={{
           transform: `translate(${knobPos.x}px, ${knobPos.y}px)`,
         }}
       >
-        <div className="w-3 h-3 bg-[#FFF9F0]" />
+        <div className="absolute inset-0 border border-[#FFF9F0] opacity-20" />
+        <div className={`w-4 h-4 bg-[#E8B84A] rotate-45 ${active ? 'bg-[#5FE3D2] animate-pulse' : ''}`} />
       </div>
     </div>
   );

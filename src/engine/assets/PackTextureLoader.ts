@@ -75,9 +75,9 @@ export type AtlasRegionKey =
  * tiles instead of tiling multi-sprite sheets across entire geometries.
  */
 export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
-  // Terrain & Paths (from user pack Vegetation.png, Farm.png, Dungeon_Tiles.png)
+  // Terrain & Paths (from user pack Vegetation.webp, Farm.webp, Dungeon_Tiles.webp)
   terrain_grass: {
-    file: 'Vegetation.png',
+    file: 'Vegetation.webp',
     x: 16,
     y: 112,
     width: 16,
@@ -86,7 +86,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'terrain',
   },
   terrain_dirt: {
-    file: 'Farm.png',
+    file: 'Farm.webp',
     x: 160,
     y: 16,
     width: 16,
@@ -95,7 +95,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'terrain',
   },
   terrain_cobble: {
-    file: 'Dungeon_Tiles.png',
+    file: 'Dungeon_Tiles.webp',
     x: 272,
     y: 0,
     width: 16,
@@ -104,9 +104,9 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'dungeon_floor',
   },
 
-  // Walls & Architecture (from Walls.png 672x800)
+  // Walls & Architecture (from Walls.webp 672x800)
   wall_stone_blocks: {
-    file: 'Walls.png',
+    file: 'Walls.webp',
     x: 16,
     y: 16,
     width: 32,
@@ -115,7 +115,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'walls',
   },
   wall_stone_dark: {
-    file: 'Walls.png',
+    file: 'Walls.webp',
     x: 112,
     y: 16,
     width: 32,
@@ -124,7 +124,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'walls',
   },
   wall_timber_wood: {
-    file: 'Walls.png',
+    file: 'Walls.webp',
     x: 16,
     y: 112,
     width: 32,
@@ -133,9 +133,9 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'props',
   },
 
-  // Roofs (from Roofs.png 400x400 - Aged Bronze & Oxidized Copper)
+  // Roofs (from Roofs.webp 400x400 - Aged Bronze & Oxidized Copper)
   roof_shingle_bronze: {
-    file: 'Roofs.png',
+    file: 'Roofs.webp',
     x: 48,
     y: 32,
     width: 32,
@@ -144,7 +144,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'roofs',
   },
   roof_shingle_copper: {
-    file: 'Roofs.png',
+    file: 'Roofs.webp',
     x: 144,
     y: 32,
     width: 32,
@@ -153,9 +153,9 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'roofs',
   },
 
-  // Crypt / Dungeon Floors & Walls (from Dungeon_Tiles.png 400x400)
+  // Crypt / Dungeon Floors & Walls (from Dungeon_Tiles.webp 400x400)
   dungeon_slab_dark: {
-    file: 'Dungeon_Tiles.png',
+    file: 'Dungeon_Tiles.webp',
     x: 0,
     y: 0,
     width: 32,
@@ -164,7 +164,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'dungeon_floor',
   },
   dungeon_slab_spectral: {
-    file: 'Dungeon_Tiles.png',
+    file: 'Dungeon_Tiles.webp',
     x: 64,
     y: 0,
     width: 32,
@@ -173,7 +173,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'dungeon_floor',
   },
   dungeon_slab_clean: {
-    file: 'Dungeon_Tiles.png',
+    file: 'Dungeon_Tiles.webp',
     x: 0,
     y: 64,
     width: 32,
@@ -182,7 +182,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'dungeon_floor',
   },
   dungeon_wall_brick: {
-    file: 'Dungeon_Tiles.png',
+    file: 'Dungeon_Tiles.webp',
     x: 0,
     y: 96,
     width: 32,
@@ -191,9 +191,9 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'dungeon_wall',
   },
 
-  // Rocks & Nature (Rocks.png 208x304 & Vegetation.png 400x432)
+  // Rocks & Nature (Rocks.webp 208x304 & Vegetation.webp 400x432)
   rock_chiseled: {
-    file: 'Rocks.png',
+    file: 'Rocks.webp',
     x: 0,
     y: 16,
     width: 32,
@@ -202,7 +202,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'rocks',
   },
   wood_props_crate: {
-    file: 'Props.png',
+    file: 'Props.webp',
     x: 0,
     y: 32,
     width: 32,
@@ -211,7 +211,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'props',
   },
   bark_trunk: {
-    file: 'Vegetation.png',
+    file: 'Vegetation.webp',
     x: 0,
     y: 48,
     width: 32,
@@ -220,7 +220,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'bark',
   },
   foliage_leaf: {
-    file: 'Vegetation.png',
+    file: 'Vegetation.webp',
     x: 32,
     y: 16,
     width: 32,
@@ -229,9 +229,9 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'vegetation',
   },
 
-  // Esoteric Arcana & Crypt Props (Esoteric.png 400x400 & Dungeon_Props.png 400x400)
+  // Esoteric Arcana & Crypt Props (Esoteric.webp 400x400 & Dungeon_Props.webp 400x400)
   esoteric_rune_column: {
-    file: 'Esoteric.png',
+    file: 'Esoteric.webp',
     x: 0,
     y: 16,
     width: 32,
@@ -239,7 +239,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'dungeon_wall',
   },
   esoteric_arcane_seal: {
-    file: 'Esoteric.png',
+    file: 'Esoteric.webp',
     x: 0,
     y: 96,
     width: 64,
@@ -247,7 +247,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'dungeon_floor',
   },
   dungeon_urn: {
-    file: 'Dungeon_Props.png',
+    file: 'Dungeon_Props.webp',
     x: 96,
     y: 0,
     width: 32,
@@ -256,7 +256,7 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'dungeon_props',
   },
   dungeon_altar_relic: {
-    file: 'Dungeon_Props.png',
+    file: 'Dungeon_Props.webp',
     x: 0,
     y: 48,
     width: 48,
@@ -265,48 +265,48 @@ export const PACK_ATLAS_REGIONS: Record<AtlasRegionKey, AtlasSubRegion> = {
     fallbackType: 'dungeon_props',
   },
 
-  // Trees (Size_03.png is 208x192, 4 columns of 48px, 2 rows of 96px, 16px tile aligned: 3x6 tiles)
-  tree_01: { file: 'Size_03.png', x: 0, y: 0, width: 48, height: 96, fallbackType: 'vegetation' },
-  tree_02: { file: 'Size_03.png', x: 48, y: 0, width: 48, height: 96, fallbackType: 'vegetation' },
-  tree_03: { file: 'Size_03.png', x: 96, y: 0, width: 48, height: 96, fallbackType: 'vegetation' },
-  tree_04: { file: 'Size_03.png', x: 144, y: 0, width: 48, height: 96, fallbackType: 'vegetation' },
-  tree_05: { file: 'Size_03.png', x: 0, y: 96, width: 48, height: 96, fallbackType: 'vegetation' },
-  tree_06: { file: 'Size_03.png', x: 48, y: 96, width: 48, height: 96, fallbackType: 'vegetation' },
-  tree_07: { file: 'Size_03.png', x: 96, y: 96, width: 48, height: 96, fallbackType: 'vegetation' },
-  tree_08: { file: 'Size_03.png', x: 144, y: 96, width: 48, height: 96, fallbackType: 'vegetation' },
+  // Trees (Size_03.webp is 208x192, 4 columns of 48px, 2 rows of 96px, 16px tile aligned: 3x6 tiles)
+  tree_01: { file: 'Size_03.webp', x: 0, y: 0, width: 48, height: 96, fallbackType: 'vegetation' },
+  tree_02: { file: 'Size_03.webp', x: 48, y: 0, width: 48, height: 96, fallbackType: 'vegetation' },
+  tree_03: { file: 'Size_03.webp', x: 96, y: 0, width: 48, height: 96, fallbackType: 'vegetation' },
+  tree_04: { file: 'Size_03.webp', x: 144, y: 0, width: 48, height: 96, fallbackType: 'vegetation' },
+  tree_05: { file: 'Size_03.webp', x: 0, y: 96, width: 48, height: 96, fallbackType: 'vegetation' },
+  tree_06: { file: 'Size_03.webp', x: 48, y: 96, width: 48, height: 96, fallbackType: 'vegetation' },
+  tree_07: { file: 'Size_03.webp', x: 96, y: 96, width: 48, height: 96, fallbackType: 'vegetation' },
+  tree_08: { file: 'Size_03.webp', x: 144, y: 96, width: 48, height: 96, fallbackType: 'vegetation' },
 
-  // Small Saplings & Pines (Size_02.png 256x128)
-  tree_small_01: { file: 'Size_02.png', x: 0, y: 0, width: 32, height: 48, fallbackType: 'vegetation' },
-  tree_small_02: { file: 'Size_02.png', x: 32, y: 0, width: 32, height: 48, fallbackType: 'vegetation' },
-  tree_small_03: { file: 'Size_02.png', x: 64, y: 0, width: 32, height: 48, fallbackType: 'vegetation' },
-  tree_small_04: { file: 'Size_02.png', x: 96, y: 0, width: 32, height: 48, fallbackType: 'vegetation' },
+  // Small Saplings & Pines (Size_02.webp 256x128)
+  tree_small_01: { file: 'Size_02.webp', x: 0, y: 0, width: 32, height: 48, fallbackType: 'vegetation' },
+  tree_small_02: { file: 'Size_02.webp', x: 32, y: 0, width: 32, height: 48, fallbackType: 'vegetation' },
+  tree_small_03: { file: 'Size_02.webp', x: 64, y: 0, width: 32, height: 48, fallbackType: 'vegetation' },
+  tree_small_04: { file: 'Size_02.webp', x: 96, y: 0, width: 32, height: 48, fallbackType: 'vegetation' },
 
-  // Majestic Large Trees (Size_04.png 368x256)
-  tree_large_01: { file: 'Size_04.png', x: 0, y: 0, width: 80, height: 128, fallbackType: 'vegetation' },
-  tree_large_02: { file: 'Size_04.png', x: 80, y: 0, width: 80, height: 128, fallbackType: 'vegetation' },
+  // Majestic Large Trees (Size_04.webp 368x256)
+  tree_large_01: { file: 'Size_04.webp', x: 0, y: 0, width: 80, height: 128, fallbackType: 'vegetation' },
+  tree_large_02: { file: 'Size_04.webp', x: 80, y: 0, width: 80, height: 128, fallbackType: 'vegetation' },
 
-  // Tree Stumps (Size_03.png column 5 x:192)
-  tree_stump: { file: 'Size_03.png', x: 192, y: 0, width: 16, height: 32, fallbackType: 'bark' },
+  // Tree Stumps (Size_03.webp column 5 x:192)
+  tree_stump: { file: 'Size_03.webp', x: 192, y: 0, width: 16, height: 32, fallbackType: 'bark' },
 
-  // Water & Pond Features (Farm.png 400x400)
-  water_pond: { file: 'Farm.png', x: 0, y: 64, width: 32, height: 32, bg: '#1f6b65', fallbackType: 'terrain' },
-  water_lily: { file: 'Farm.png', x: 64, y: 64, width: 16, height: 16, bg: '#2b5220', fallbackType: 'vegetation' },
+  // Water & Pond Features (Farm.webp 400x400)
+  water_pond: { file: 'Farm.webp', x: 0, y: 64, width: 32, height: 32, bg: '#1f6b65', fallbackType: 'terrain' },
+  water_lily: { file: 'Farm.webp', x: 64, y: 64, width: 16, height: 16, bg: '#2b5220', fallbackType: 'vegetation' },
 
-  // Village & Outpost Props (Props.png 400x400)
-  prop_signpost: { file: 'Props.png', x: 16, y: 64, width: 32, height: 32, fallbackType: 'props' },
-  prop_barrel: { file: 'Props.png', x: 48, y: 32, width: 16, height: 16, fallbackType: 'props' },
-  prop_bench: { file: 'Props.png', x: 0, y: 16, width: 32, height: 16, fallbackType: 'props' },
+  // Village & Outpost Props (Props.webp 400x400)
+  prop_signpost: { file: 'Props.webp', x: 16, y: 64, width: 32, height: 32, fallbackType: 'props' },
+  prop_barrel: { file: 'Props.webp', x: 48, y: 32, width: 16, height: 16, fallbackType: 'props' },
+  prop_bench: { file: 'Props.webp', x: 0, y: 16, width: 32, height: 16, fallbackType: 'props' },
 
-  // Authentic 2.5D Billboard Rocks (from Rocks.png 208x304)
-  rock_large_01: { file: 'Rocks.png', x: 0, y: 16, width: 64, height: 48, fallbackType: 'rocks' },
-  rock_large_02: { file: 'Rocks.png', x: 64, y: 16, width: 64, height: 48, fallbackType: 'rocks' },
-  rock_small_01: { file: 'Rocks.png', x: 32, y: 64, width: 32, height: 32, fallbackType: 'rocks' },
-  rock_small_02: { file: 'Rocks.png', x: 96, y: 64, width: 32, height: 32, fallbackType: 'rocks' },
+  // Authentic 2.5D Billboard Rocks (from Rocks.webp 208x304)
+  rock_large_01: { file: 'Rocks.webp', x: 0, y: 16, width: 64, height: 48, fallbackType: 'rocks' },
+  rock_large_02: { file: 'Rocks.webp', x: 64, y: 16, width: 64, height: 48, fallbackType: 'rocks' },
+  rock_small_01: { file: 'Rocks.webp', x: 32, y: 64, width: 32, height: 32, fallbackType: 'rocks' },
+  rock_small_02: { file: 'Rocks.webp', x: 96, y: 64, width: 32, height: 32, fallbackType: 'rocks' },
 
-  // Authentic 2.5D Billboard Bushes (from Vegetation.png 400x432)
-  bush_large_01: { file: 'Vegetation.png', x: 0, y: 32, width: 48, height: 32, fallbackType: 'vegetation' },
-  bush_large_02: { file: 'Vegetation.png', x: 48, y: 32, width: 48, height: 32, fallbackType: 'vegetation' },
-  bush_small_01: { file: 'Vegetation.png', x: 32, y: 0, width: 32, height: 32, fallbackType: 'vegetation' },
+  // Authentic 2.5D Billboard Bushes (from Vegetation.webp 400x432)
+  bush_large_01: { file: 'Vegetation.webp', x: 0, y: 32, width: 48, height: 32, fallbackType: 'vegetation' },
+  bush_large_02: { file: 'Vegetation.webp', x: 48, y: 32, width: 48, height: 32, fallbackType: 'vegetation' },
+  bush_small_01: { file: 'Vegetation.webp', x: 32, y: 0, width: 32, height: 32, fallbackType: 'vegetation' },
 };
 
 /**
@@ -585,6 +585,111 @@ export class PackTextureLoader {
           (activeTexture as any).image = baseTex.image;
           activeTexture.needsUpdate = true;
         }
+      });
+    }
+
+    return activeTexture;
+  }
+
+  /**
+   * Extracts and returns a corresponding normal map for a sub-texture.
+   * Generates normals from pixel brightness (luminance) using a Sobel-style derivative filter,
+   * providing depth to flat 16x16 pixel art in the 3D environment.
+   */
+  public getSubNormalMap(
+    regionKey: AtlasRegionKey,
+    options: PackTextureOptions = {}
+  ): THREE.Texture {
+    const region = PACK_ATLAS_REGIONS[regionKey];
+    if (!region) return this.getProceduralFallback('terrain', options.repeatX ?? 1, options.repeatY ?? 1);
+
+    const repeatX = options.repeatX ?? 1;
+    const repeatY = options.repeatY ?? 1;
+    const cacheKey = `norm_${regionKey}_${repeatX}_${repeatY}`;
+
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey)!;
+    }
+
+    const targetWidth = region.width * repeatX;
+    const targetHeight = region.height * repeatY;
+    let canvas: HTMLCanvasElement | null = null;
+    let ctx: CanvasRenderingContext2D | null = null;
+
+    if (typeof document !== 'undefined' && document.createElement) {
+      canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      ctx = canvas.getContext('2d');
+    }
+
+    let activeTexture: THREE.Texture;
+    if (canvas) {
+      const canvasTex = new THREE.CanvasTexture(canvas);
+      canvasTex.magFilter = THREE.NearestFilter;
+      canvasTex.minFilter = THREE.NearestFilter;
+      canvasTex.generateMipmaps = false;
+      canvasTex.wrapS = options.wrapS ?? THREE.RepeatWrapping;
+      canvasTex.wrapT = options.wrapT ?? THREE.RepeatWrapping;
+      activeTexture = canvasTex;
+    } else {
+      activeTexture = this.getProceduralFallback('terrain', repeatX, repeatY);
+    }
+
+    this.cache.set(cacheKey, activeTexture);
+
+    if (typeof document !== 'undefined' && ctx && canvas) {
+      this.loadBaseImage(region.file).then((img) => {
+        if (!img || !ctx || !canvas) return;
+
+        // 1. Draw original sub-region to temporary canvas to get brightness data
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = targetWidth;
+        tempCanvas.height = targetHeight;
+        const tctx = tempCanvas.getContext('2d');
+        if (!tctx) return;
+
+        for (let ry = 0; ry < repeatY; ry++) {
+          for (let rx = 0; rx < repeatX; rx++) {
+            tctx.drawImage(img, region.x, region.y, region.width, region.height, rx * region.width, ry * region.height, region.width, region.height);
+          }
+        }
+
+        const srcData = tctx.getImageData(0, 0, targetWidth, targetHeight);
+        const destData = ctx.createImageData(targetWidth, targetHeight);
+        const src = srcData.data;
+        const dest = destData.data;
+
+        const getL = (x: number, y: number) => {
+          const px = Math.min(Math.max(x, 0), targetWidth - 1);
+          const py = Math.min(Math.max(y, 0), targetHeight - 1);
+          const idx = (py * targetWidth + px) * 4;
+          return (src[idx] * 0.299 + src[idx + 1] * 0.587 + src[idx + 2] * 0.114) / 255.0;
+        };
+
+        const strength = 1.5;
+        for (let y = 0; y < targetHeight; y++) {
+          for (let x = 0; x < targetWidth; x++) {
+            const idx = (y * targetWidth + x) * 4;
+            const hL = getL(x - 1, y);
+            const hR = getL(x + 1, y);
+            const hU = getL(x, y - 1);
+            const hD = getL(x, y + 1);
+
+            const nx = (hL - hR) * strength;
+            const ny = (hU - hD) * strength;
+            const nz = 1.0;
+
+            const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+            dest[idx] = Math.round((nx / len * 0.5 + 0.5) * 255);
+            dest[idx + 1] = Math.round((ny / len * 0.5 + 0.5) * 255);
+            dest[idx + 2] = Math.round((nz / len * 0.5 + 0.5) * 255);
+            dest[idx + 3] = src[idx + 3]; // Preserve alpha
+          }
+        }
+
+        ctx.putImageData(destData, 0, 0);
+        activeTexture.needsUpdate = true;
       });
     }
 

@@ -36,8 +36,15 @@ export class Dungeon {
       repeatX: 4,
       repeatY: 4,
     });
+    const floorNormal = packTextureLoader.getSubNormalMap('dungeon_slab_dark', {
+      repeatX: 4,
+      repeatY: 4,
+    });
+
     this.floorMaterial = new THREE.MeshStandardMaterial({
       map: floorTexture,
+      normalMap: floorNormal,
+      normalScale: new THREE.Vector2(0.8, 0.8),
       roughness: 0.85,
       metalness: 0.1,
     });
@@ -46,8 +53,15 @@ export class Dungeon {
       repeatX: 3,
       repeatY: 2,
     });
+    const wallNormal = packTextureLoader.getSubNormalMap('dungeon_wall_brick', {
+      repeatX: 3,
+      repeatY: 2,
+    });
+
     this.wallMaterial = new THREE.MeshStandardMaterial({
       map: wallTexture,
+      normalMap: wallNormal,
+      normalScale: new THREE.Vector2(1.2, 1.2),
       roughness: 0.8,
       metalness: 0.15,
     });
@@ -56,8 +70,15 @@ export class Dungeon {
       repeatX: 1,
       repeatY: 2,
     });
+    const pillarNormal = packTextureLoader.getSubNormalMap('dungeon_wall_brick', {
+      repeatX: 1,
+      repeatY: 2,
+    });
+
     this.pillarMaterial = new THREE.MeshStandardMaterial({
       map: pillarTexture,
+      normalMap: pillarNormal,
+      normalScale: new THREE.Vector2(1.2, 1.2),
       roughness: 0.75,
       metalness: 0.2,
     });

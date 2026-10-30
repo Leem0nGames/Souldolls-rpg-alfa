@@ -3,6 +3,7 @@ import { SpellDefinition, SPELL_CATALOG } from './SpellData';
 import { Enemy } from '../entities/Enemy';
 import { Player } from '../entities/Player';
 import { Terrain } from '../world/Terrain';
+import { StepParticles } from '../graphics/StepParticles';
 
 interface ActiveProjectile {
   mesh: THREE.Mesh;
@@ -16,10 +17,12 @@ interface ActiveProjectile {
 export class MagicSystem {
   private scene: THREE.Scene;
   private projectiles: ActiveProjectile[] = [];
-  public cooldowns: Record<string, number> = {}; // spellId -> remaining seconds
+  public cooldowns: Record<string, number> = {}; 
+  private trailParticles: StepParticles;
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
+    this.trailParticles = new StepParticles(scene);
   }
 
   public getSpell(id: string): SpellDefinition | undefined {
@@ -69,8 +72,12 @@ export class MagicSystem {
         proj.mesh.geometry.dispose();
         (proj.mesh.material as THREE.Material).dispose();
         this.projectiles.splice(i, 1);
+      } else {
+        // Trail particles
+        this.trailParticles.emit(proj.position, 1, 0xFF7700);
       }
     }
+    this.trailParticles.update(dt);
   }
 
   public castSpell(

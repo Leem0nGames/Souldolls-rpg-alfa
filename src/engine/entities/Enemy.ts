@@ -4,6 +4,8 @@ import { BillboardCharacter } from '../graphics/BillboardCharacter';
 import { spriteLoader } from '../assets/SpriteLoader';
 import { ASSET_CATALOG } from '../assets/catalog';
 import { PALETTE } from '../graphics/Palette';
+import { StepParticles } from '../graphics/StepParticles';
+import { SlashParticles } from '../graphics/SlashParticles';
 
 /**
  * Enemy represents a 2.5D pixel-art creature (Forest Slime) in the 3D world.
@@ -25,6 +27,9 @@ export class Enemy {
   private hpBarGroup!: THREE.Group;
   private attackCooldown = 0;
   private facingAngle = 0;
+  private stepParticles: StepParticles;
+  private slashParticles: SlashParticles;
+  private stepTimer = 0;
 
   constructor(scene: THREE.Scene, startX: number, startZ: number, terrain: Terrain) {
     this.mesh = new THREE.Group();
@@ -55,6 +60,9 @@ export class Enemy {
     );
     this.hpBarGroup.add(this.hpBarFill);
     this.mesh.add(this.hpBarGroup);
+
+    this.stepParticles = new StepParticles(scene);
+    this.slashParticles = new SlashParticles(scene);
 
     scene.add(this.mesh);
   }
@@ -103,6 +111,10 @@ export class Enemy {
       if (this.attackCooldown <= 0) {
         this.attackCooldown = 1.6;
         this.billboard.setScale(1.3, 0.8);
+        
+        // Emit spectral slime slash
+        const forward = new THREE.Vector3(Math.sin(this.facingAngle), 0, Math.cos(this.facingAngle));
+        this.slashParticles.emitSlash(this.position, forward, 0x47670f);
       } else {
         this.billboard.setScale(1.0, 1.0);
       }
@@ -118,10 +130,23 @@ export class Enemy {
 
     // Update Billboard sprite animation and camera-relative direction
     this.billboard.update(dt, isMoving, this.facingAngle, cameraYaw);
+    
+    // Update Particles
+    this.stepParticles.update(dt);
+    this.slashParticles.update(dt);
+    if (isMoving) {
+      this.stepTimer += dt;
+      if (this.stepTimer >= 0.25) {
+        this.stepTimer = 0;
+        this.stepParticles.emit(this.position, 1, 0x32A89D); // Slime green particles
+      }
+    }
   }
 
   public dispose() {
     this.billboard.dispose();
+    this.stepParticles.dispose();
+    this.slashParticles.dispose();
     this.hpBarFill.geometry.dispose();
     (this.hpBarFill.material as THREE.Material).dispose();
   }

@@ -38,8 +38,15 @@ export class Terrain {
       repeatX: tileRepeats,
       repeatY: tileRepeats,
     });
+    const terrainNormal = packTextureLoader.getSubNormalMap('terrain_grass', {
+      repeatX: tileRepeats,
+      repeatY: tileRepeats,
+    });
+
     this.material = new THREE.MeshStandardMaterial({
       map: terrainTexture,
+      normalMap: terrainNormal,
+      normalScale: new THREE.Vector2(0.5, 0.5),
       roughness: 0.95,
       metalness: 0.0,
       flatShading: false, // Smooth shading eliminates faceted diamond/checkerboard polygon artifacts!

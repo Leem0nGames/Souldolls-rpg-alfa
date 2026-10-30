@@ -10,6 +10,7 @@ export interface SpriteSheetConfig {
     up: number;
   };
   frameInterval?: number; // seconds per animation frame
+  idleFrame?: number;    // frame index to use when stationary
 }
 
 /**
@@ -26,7 +27,7 @@ export class BillboardCharacter {
   private texture: THREE.Texture;
   private config: Required<SpriteSheetConfig>;
 
-  private currentFrame = 1; // 1 is standard RPG Maker XP idle frame
+  private currentFrame = 0; // 0 is the new idle frame requested for fighter_walk.png
   private currentRow = 0;   // 0 = Down/Front
   private animTimer = 0;
 
@@ -57,28 +58,30 @@ export class BillboardCharacter {
         up: 3,
       },
       frameInterval: customConfig?.frameInterval ?? 0.14,
+      idleFrame: customConfig?.idleFrame ?? 0,
     };
 
-    // Clone texture so UV offsets are independent per instance
-    this.texture = texture.clone();
+    // Use original texture reference (shared across all instances) to ensure async canvas updates work
+    this.texture = texture;
     this.texture.wrapS = THREE.RepeatWrapping;
     this.texture.wrapT = THREE.RepeatWrapping;
-    this.texture.needsUpdate = true;
+    this.texture.magFilter = THREE.NearestFilter;
+    this.texture.minFilter = THREE.NearestFilter;
+    this.texture.generateMipmaps = false;
     this.texture.repeat.set(1 / this.config.cols, 1 / this.config.rows);
 
-    let normalMap: THREE.Texture | undefined = undefined;
     if (normalTexture) {
-      const normClone = normalTexture.clone();
-      normClone.wrapS = THREE.RepeatWrapping;
-      normClone.wrapT = THREE.RepeatWrapping;
-      normClone.needsUpdate = true;
-      normClone.repeat.set(1 / this.config.cols, 1 / this.config.rows);
-      this.normalTexture = normClone;
-      normalMap = normClone;
+      this.normalTexture = normalTexture;
+      this.normalTexture.wrapS = THREE.RepeatWrapping;
+      this.normalTexture.wrapT = THREE.RepeatWrapping;
+      this.normalTexture.magFilter = THREE.NearestFilter;
+      this.normalTexture.minFilter = THREE.NearestFilter;
+      this.normalTexture.generateMipmaps = false;
+      this.normalTexture.repeat.set(1 / this.config.cols, 1 / this.config.rows);
     }
 
-    // Initial UV offset (Frame 1, Row 0 = Down)
-    this.updateUVOffset(1, this.config.rowMapping.down);
+    // Initial UV offset (Frame 0, Row 0 = Down)
+    this.updateUVOffset(this.config.idleFrame, this.config.rowMapping.down);
 
     // 1. Plane Geometry with anchor at feet (y=0)
     const planeGeo = new THREE.PlaneGeometry(width, height);
@@ -86,13 +89,16 @@ export class BillboardCharacter {
 
     this.material = new THREE.MeshStandardMaterial({
       map: this.texture,
-      ...(normalMap ? { normalMap } : {}),
-      normalScale: new THREE.Vector2(0.7, 0.7),
+      normalMap: this.normalTexture || null,
+      normalScale: new THREE.Vector2(1.0, 1.0),
       transparent: true,
-      alphaTest: 0.5, // Eliminates dark transparent halos in WebGL
-      roughness: 0.85,
-      metalness: 0.05,
+      alphaTest: 0.05,
+      roughness: 0.25, // Low roughness for crisp, vibrant highlights
+      metalness: 0.0,  // Zero metalness to avoid dark specular artifacts on pixel art
+      emissive: new THREE.Color(0x332211), // Subtle warm glow to boost saturation in shadows
+      emissiveIntensity: 0.08,
       side: THREE.DoubleSide,
+      color: new THREE.Color(0xffffff),
     });
 
     this.spriteMesh = new THREE.Mesh(planeGeo, this.material);
@@ -100,19 +106,30 @@ export class BillboardCharacter {
     this.spriteMesh.receiveShadow = false;
     this.mesh.add(this.spriteMesh);
 
-    // 2. Subtle 3D ground shadow decal at feet
-    const shadowGeo = new THREE.PlaneGeometry(width * 0.75, width * 0.45);
+    // 2. Stylized 3D ground shadow decal at feet
+    const shadowGeo = new THREE.PlaneGeometry(width * 0.8, width * 0.4);
     shadowGeo.rotateX(-Math.PI / 2);
     const shadowMat = new THREE.MeshBasicMaterial({
       color: 0x000000,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.45,
       depthWrite: false,
     });
     this.shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
     this.shadowMesh.position.y = 0.02; // Just above terrain surface
     this.mesh.add(this.shadowMesh);
+
+    // Initial size tracking
+    if (this.texture.image) {
+      this.lastImageWidth = this.texture.image.width;
+      this.lastImageHeight = this.texture.image.height;
+    }
+    
+    // Force a few updates to ensure async textures are caught
+    this.forceUpdateTicks = 60;
   }
+
+  private forceUpdateTicks = 0;
 
   /**
    * Updates UV coordinates to display the exact column (frame) and row (direction).
@@ -122,14 +139,42 @@ export class BillboardCharacter {
     this.currentRow = row;
 
     const u = col / this.config.cols;
-    // In Three.js CanvasTexture UV space, V=0 is bottom, V=1 is top
     const v = 1 - (row + 1) / this.config.rows;
+
+    // Detect if the shared canvas was resized/updated by SpriteLoader
+    if (this.texture.image) {
+        const currentW = this.texture.image.width;
+        const currentH = this.texture.image.height;
+        
+        const sizeChanged = currentW > 0 && (currentW !== this.lastImageWidth || currentH !== this.lastImageHeight);
+        
+        if (sizeChanged || this.forceUpdateTicks > 0) {
+            this.texture.needsUpdate = true;
+            if (this.normalTexture) this.normalTexture.needsUpdate = true;
+            
+            // Critical: Force material to re-verify textures
+            if (this.material) this.material.needsUpdate = true;
+
+            if (sizeChanged) {
+                this.lastImageWidth = currentW;
+                this.lastImageHeight = currentH;
+            }
+            if (this.forceUpdateTicks > 0) this.forceUpdateTicks--;
+            
+            if (this.spriteMesh) {
+                this.spriteMesh.geometry.computeBoundingSphere();
+            }
+        }
+    }
 
     this.texture.offset.set(u, v);
     if (this.normalTexture) {
       this.normalTexture.offset.set(u, v);
     }
   }
+
+  private lastImageWidth = 0;
+  private lastImageHeight = 0;
 
   private baseScaleX = 1.0;
   private baseScaleY = 1.0;
@@ -191,7 +236,8 @@ export class BillboardCharacter {
         this.currentFrame = (this.currentFrame + 1) % this.config.cols;
       }
     } else {
-      this.currentFrame = 1;
+      // Return to explicit Idle pose (Frame 0) when stationary
+      this.currentFrame = this.config.idleFrame;
       this.animTimer = 0;
     }
 
@@ -257,7 +303,7 @@ export class BillboardCharacter {
         this.currentFrame = (this.currentFrame + 1) % this.config.cols;
       }
     } else {
-      this.currentFrame = 1;
+      this.currentFrame = this.config.idleFrame;
       this.animTimer = 0;
     }
 
@@ -274,9 +320,9 @@ export class BillboardCharacter {
   /**
    * Triggers a hit recoil / red flash on the billboard material.
    */
-  public triggerHitFlash(duration = 0.15) {
+  public triggerHitFlash(duration = 0.15, colorHex = 0xff4444) {
     this.flashTimer = duration;
-    this.material.color.copy(this.flashColor);
+    this.material.color.setHex(colorHex);
   }
 
   /**

@@ -46,10 +46,10 @@ export class Environment {
 
   /**
    * Spawns multi-layered authentic 2.5D billboard trees across three scale tiers:
-   * - Medium forest trees (Size_03.png: 48x96 px -> 3.0 x 6.0 units)
-   * - Young pines & saplings (Size_02.png: 32x48 px -> 1.9 x 2.85 units)
-   * - Ancient grand trees (Size_04.png: 80x128 px -> 4.5 x 7.2 units)
-   * - Mossy tree stumps (Size_03.png: 16x32 px -> 1.1 x 1.5 units)
+   * - Medium forest trees (Size_03.webp: 48x96 px -> 3.0 x 6.0 units)
+   * - Young pines & saplings (Size_02.webp: 32x48 px -> 1.9 x 2.85 units)
+   * - Ancient grand trees (Size_04.webp: 80x128 px -> 4.5 x 7.2 units)
+   * - Mossy tree stumps (Size_03.webp: 16x32 px -> 1.1 x 1.5 units)
    */
   private spawnTreesBillboard(terrain: Terrain, count: number) {
     const medTrees = ['tree_01', 'tree_02', 'tree_03', 'tree_04', 'tree_05', 'tree_06', 'tree_07', 'tree_08'] as const;
@@ -118,7 +118,7 @@ export class Environment {
   }
 
   /**
-   * Spawns authentic 2.5D pixel-art billboard rocks from Rocks.png.
+   * Spawns authentic 2.5D pixel-art billboard rocks from Rocks.webp.
    * Completely replaces deformed 3D dodecahedrons with genuine pixel-art rock sprites.
    */
   private spawnRocksBillboard(terrain: Terrain, count: number) {
@@ -157,7 +157,7 @@ export class Environment {
   }
 
   /**
-   * Spawns authentic 2.5D pixel-art billboard bushes from Vegetation.png.
+   * Spawns authentic 2.5D pixel-art billboard bushes from Vegetation.webp.
    * Completely replaces multi-sphere 3D meshes with crisp, hand-crafted pixel art shrubbery.
    */
   private spawnBushesBillboard(terrain: Terrain, count: number) {
