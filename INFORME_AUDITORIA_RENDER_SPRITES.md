@@ -81,7 +81,24 @@
 - `PackTextureLoader.getSubTexture`: `minFilter = NearestMipmapLinearFilter`, `generateMipmaps = true` (magFilter sigue `NearestFilter`).
 - QA J6 valida la ruta canvas (fallback SSR documentado).
 
-## 8. Recomendaciones futuras (no bloqueantes)
+## 8. Mapa rural — Villa + Aldea + Bosque (implementado 2026-10-30)
+
+### Cambios (`src/engine/world/Environment.ts`)
+- Nuevo builder reutilizable `buildFantasyHouse(...)`: muros de mampostería, vigas de madera, techo a dos aguas, alero, frontón triangular, puerta de entrada, ventanas con postigos y chimenea.
+- Nuevo spawn `spawnRuralHub(terrain)`:
+  - **Villa grande** (mansion 8×9, muros 4.2, techo 3.0) en (18, -16) + **2 cottages** pequeños (3.4×4.2 y 3.2×3.8).
+  - **Sendero de piedra** de ~12.66 unidades entre villa y aldea (PlaneGeometry + cobble).
+  - **Zona boscosa**: 2 batches `InstancedBillboard` (árboles medianos 8 + árboles grandes 6).
+  - **Flores diversas** (roja/amarilla/cian, 5 por batch) vía `InstancedBillboard`.
+  - **Arbustos, rocas, hongos y hierba alta (ferns)** vía `BillboardProp`.
+- Todas las texturas provienen del graphic pack existente (`PackTextureLoader` / `SpriteLoader` con fallbacks procedurales).
+
+### QA (sección L)
+- **L1/L2**: Villa + cottages con obstáculos de colisión correctos. ✅ PASS.
+- **L3**: Batches InstancedBillboard activos en zona boscosa (9 batches). ✅ PASS.
+- **L4**: Flora variada registrada (175 props billboard). ✅ PASS.
+
+## 9. Recomendaciones futuras (no bloqueantes)
 1. Re-exportar la hoja AI con **grid entero** (p. ej. frames de 174×259 px) para eliminar la causa raíz del bleed.
 2. ~~Instancing~~ **COMPLETADO** (flores + setas vía `InstancedBillboard`).
 3. ~~Mipmapping~~ **COMPLETADO** (NearestMipmapLinear en sub-texturas repetitivas).

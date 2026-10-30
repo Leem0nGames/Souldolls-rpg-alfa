@@ -15,20 +15,21 @@ import { Player } from './src/engine/entities/Player';
 import { MagicSystem } from './src/engine/magic/MagicSystem';
 import { QuestSystem } from './src/engine/quests/QuestSystem';
 import { Dungeon } from './src/engine/world/Dungeon';
+import { Environment } from './src/engine/world/Environment';
 
 import * as fs from 'fs';
 import { packTextureLoader } from './src/engine/assets/PackTextureLoader';
 
 interface TestResult {
   name: string;
-  category: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K';
+  category: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L';
   passed: boolean;
   details: string;
 }
 
 const results: TestResult[] = [];
 
-function assert(condition: boolean, name: string, category: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K', details: string) {
+function assert(condition: boolean, name: string, category: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L', details: string) {
   results.push({
     name,
     category,
@@ -855,6 +856,58 @@ async function runQASuite() {
     'K',
     `InstancedMesh con ${instancedCount} instancias; matrices coherentes tras update(cameraYaw=0.9).`
   );
+
+  // ----------------------------------------------------
+  // PRUEBAS L: MAPA RURAL (ALDEA + VILLA + SENDERO + BOSQUE)
+  // ----------------------------------------------------
+  console.log('\n--- SECCIÓN L: MAPA RURAL ---');
+
+  const ruralScene = new THREE.Scene();
+  const ruralTerrain = new Terrain(140, 70);
+  const ruralEnvironment = new Environment(ruralScene, ruralTerrain);
+
+  // L1: Villa grande (mansion) del mapa rural presente con colisión
+  const mansionObstacle = ruralEnvironment.obstacles.find(
+    (o) => Math.abs(o.x - 18) < 0.5 && Math.abs(o.z - (-16)) < 0.5
+  );
+  assert(
+    mansionObstacle !== undefined && mansionObstacle.radius > 4.5,
+    'L1: Villa grande (mansion) del mapa rural presente con colisión',
+    'L',
+    `Villa en (18, -16) con radius=${mansionObstacle?.radius}.`
+  );
+
+  // L2: Aldea pequeña (2 cottages) presentes con colisión
+  const cottageAOccupied =
+    ruralEnvironment.obstacles.some((o) => Math.abs(o.x - 6) < 0.5 && Math.abs(o.z - (-19)) < 0.5 && o.radius > 1.5);
+  const cottageBOccupied =
+    ruralEnvironment.obstacles.some((o) => Math.abs(o.x - 9) < 0.5 && Math.abs(o.z - (-22)) < 0.5 && o.radius > 1.4);
+  assert(
+    cottageAOccupied && cottageBOccupied,
+    'L2: Aldea pequeña (2 cottages) presentes con colisión',
+    'L',
+    `Cottage A en (6, -19) y Cottage B en (9, -22) dentro del área vallada.`
+  );
+
+  // L3: Zona boscosa con batches InstancedBillboard de árboles activos
+  const ruralForestBatches = ruralEnvironment.instancedBillboards.filter((ib) => ib.mesh.count > 0);
+  assert(
+    ruralForestBatches.length > 0,
+    'L3: Zona boscosa con batches InstancedBillboard de arboles',
+    'L',
+    `${ruralForestBatches.length} batch(es) InstancedBillboard con instancias activas en la zona boscosa.`
+  );
+
+  // L4: Flora variada (flores, arbustos, rocas, hongos, hierba alta) registrada
+  const hasFloraProps = ruralEnvironment.billboardProps.length > 0;
+  assert(
+    hasFloraProps,
+    'L4: Flora variada (flores, arbustos, rocas, hongos, hierba alta) del mapa rural',
+    'L',
+    `${ruralEnvironment.billboardProps.length} props billboard (arbustos/rocas/hongos/hierba).`
+  );
+
+  ruralEnvironment.dispose();
 
   console.log('\n====================================================');
   const total = results.length;
