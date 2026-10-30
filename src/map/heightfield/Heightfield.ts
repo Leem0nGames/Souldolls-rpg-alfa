@@ -36,14 +36,14 @@ export class Heightfield {
     const scale = 1 / 320;
     const warped = this.noise.domainWarp(x * scale, z * scale, 1.6);
 
-    // Base fBm
-    let h = this.noise.fbm(warped.x, warped.y, 6, 2.0, 0.5) * 14;
+    // Base fBm (reduced amplitude for smoother terrain)
+    let h = this.noise.fbm(warped.x, warped.y, 6, 2.0, 0.5) * 6;
 
-    // Ridged crests
-    h += this.noise.ridgedNoise(warped.x * 1.3, warped.y * 1.3, 4) * 9;
+    // Ridged crests (subtle)
+    h += this.noise.ridgedNoise(warped.x * 1.3, warped.y * 1.3, 4) * 4;
 
     // Macro identity fields
-    h += this.noise.macroHeight(x, z, this.worldSize) * 6;
+    h += this.noise.macroHeight(x, z, this.worldSize) * 3;
 
     // Flatten spawn area
     const dist = Math.hypot(x, z);

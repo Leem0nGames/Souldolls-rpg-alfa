@@ -75,8 +75,8 @@ export class BillboardCharacter {
       material: customConfig?.material ?? {},
     };
 
-    // Clone texture so UV offsets are independent per instance
-    this.texture = texture.clone();
+    // Use the texture directly (no clone) so async external loads update it in place.
+    this.texture = texture;
     this.texture.wrapS = THREE.RepeatWrapping;
     this.texture.wrapT = THREE.RepeatWrapping;
     this.texture.needsUpdate = true;
@@ -313,6 +313,6 @@ export class BillboardCharacter {
     this.shadowMesh.geometry.dispose();
     this.material.dispose();
     (this.shadowMesh.material as THREE.Material).dispose();
-    this.texture.dispose();
+    // Do not dispose shared texture (loaded by SpriteLoader).
   }
 }

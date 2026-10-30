@@ -54,14 +54,14 @@ export class Engine {
   public terrain: any;
   public environment: Environment;
   public map: MapEngine;
-  public player: Player;
+  public player!: Player;
   public tpCamera: ThirdPersonCamera;
   public input: InputManager;
   public regionManager?: RegionManager;
   public magicSystem: MagicSystem;
   public questSystem: QuestSystem;
 
-  public npc: NPC;
+  public npc!: NPC;
   public enemies: Enemy[] = [];
   public dungeon: Dungeon;
   public inDungeon: boolean = false;
@@ -178,17 +178,6 @@ export class Engine {
       if (this.onSpellCastMessage) this.onSpellCastMessage(msg);
     };
 
-    // 7. Player construction
-    this.player = new Player(worldRoot, 0, 0, this.terrain);
-
-    // 8. NPC
-    this.npc = new NPC(worldRoot, 2.5, 2.5, this.terrain);
-    this.environment.obstacles.push({ x: 2.5, z: 2.5, radius: 0.8 });
-
-    // 9. Enemies
-    this.enemies.push(new Enemy(worldRoot, 14, -8, this.terrain));
-    this.enemies.push(new Enemy(worldRoot, -6, 16, this.terrain));
-
     // 10. Input binding
     this.input = new InputManager();
     this.input.attachToElement(this.renderer.domElement);
@@ -196,14 +185,21 @@ export class Engine {
     this.input.onAttack = () => this.handlePlayerAttack();
     this.input.onDodge = () => {
       const moveDir = new THREE.Vector3(this.input.moveVector.x, 0, this.input.moveVector.y);
-      this.player.triggerDodge(moveDir);
+      this.player?.triggerDodge(moveDir);
     };
     this.input.onAction = () => this.handlePlayerAction();
 
     window.addEventListener('resize', this.onWindowResize);
 
-    // Start 60fps render loop
-    this.startLoop();
+    // Preload sprites, then build player/entities and start loop
+    void spriteLoader.preloadAssets(Object.keys(ASSET_CATALOG)).then(() => {
+      this.player = new Player(worldRoot, 0, 0, this.terrain);
+      this.npc = new NPC(worldRoot, 2.5, 2.5, this.terrain);
+      this.environment.obstacles.push({ x: 2.5, z: 2.5, radius: 0.8 });
+      this.enemies.push(new Enemy(worldRoot, 14, -8, this.terrain));
+      this.enemies.push(new Enemy(worldRoot, -6, 16, this.terrain));
+      this.startLoop();
+    });
   }
 
   public handlePlayerAttack() {

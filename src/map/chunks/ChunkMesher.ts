@@ -20,11 +20,16 @@ export function buildChunkMesh(data: ChunkData, stride: number = 1): THREE.Mesh 
       positions[idx] = ix * step;
       positions[idx + 1] = h;
       positions[idx + 2] = iz * step;
-      // simple height-based color
-      const t = Math.max(0, Math.min(1, (h + 5) / 25));
-      colors[idx] = 0.25 + t * 0.15;
-      colors[idx + 1] = 0.45 + t * 0.25;
-      colors[idx + 2] = 0.2 + (1 - t) * 0.2;
+      // Height-based color: water -> sand -> grass -> rock -> snow
+      let r = 0.3, g = 0.5, b = 0.25;
+      if (h < 0) { r = 0.15; g = 0.35; b = 0.6; }
+      else if (h < 2) { r = 0.76; g = 0.7; b = 0.5; }
+      else if (h < 8) { r = 0.25; g = 0.55; b = 0.2; }
+      else if (h < 15) { r = 0.5; g = 0.45; b = 0.4; }
+      else { r = 0.9; g = 0.9; b = 0.95; }
+      colors[idx] = r;
+      colors[idx + 1] = g;
+      colors[idx + 2] = b;
       const uvidx = (iz * n + ix) * 2;
       uvs[uvidx] = (ix / Math.max(1, n - 1)) * 4;
       uvs[uvidx + 1] = (iz / Math.max(1, n - 1)) * 4;
