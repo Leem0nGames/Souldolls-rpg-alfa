@@ -25,14 +25,13 @@ export const ASSET_CATALOG: Record<string, SpriteAssetDefinition> = {
       cols: 4,
       rows: 4,
       rowMapping: {
-        down: 0,
+        down: 1,
         left: 1,
-        right: 2,
-        up: 3,
+        right: 1,
+        up: 1,
       },
       frameInterval: 0.14,
-      // La hoja AI tiene frames de 173.5x258.5 px (lattice fraccional): el inset evita bleed entre frames vecinos
-      frameInsetPx: 0,
+      frameInsetPx: 0.75,
     },
     scale: {
       width: 1.35,

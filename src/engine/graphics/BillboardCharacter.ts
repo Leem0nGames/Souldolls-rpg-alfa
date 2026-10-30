@@ -38,7 +38,7 @@ export class BillboardCharacter {
   private texture: THREE.Texture;
   private config: Required<SpriteSheetConfig>;
 
-  private currentFrame = 1; // 1 is standard RPG Maker XP idle frame
+  private currentFrame = 0; // test: show first frame
   private currentRow = 0;   // 0 = Down/Front
   private animTimer = 0;
 
@@ -69,7 +69,7 @@ export class BillboardCharacter {
         up: 3,
       },
       frameInterval: customConfig?.frameInterval ?? 0.14,
-      idleFrame: customConfig?.idleFrame ?? 1,
+      idleFrame: customConfig?.idleFrame ?? 0,
       frameInsetPx: customConfig?.frameInsetPx ?? 0,
       anchor: customConfig?.anchor ?? { x: 0.5, y: 0 },
       material: customConfig?.material ?? {},
@@ -175,11 +175,12 @@ export class BillboardCharacter {
       this.normalTexture.repeat.set(repeatU, repeatV);
       this.normalTexture.offset.set(u, v);
     }
+
   }
 
   private baseScaleX = 1.0;
   private baseScaleY = 1.0;
-  private lastFacingRow = 0;
+  private lastFacingRow = 1;
 
   /**
    * Directly updates orientation and animation using normalized 2D movement input (-1 to 1)
