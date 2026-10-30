@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "assets:optimize": "tsx scripts/optimize-assets.ts",
     "assets:normalize": "tsx scripts/normalize-sprite-sheet.ts",
-    "test": "tsx test_qa_suite.ts"
+    "test": "tsx test_qa_suite.ts",
+    "test:map": "tsx test_map_noise.ts && tsx test_map_heightfield.ts && tsx test_map_chunks.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

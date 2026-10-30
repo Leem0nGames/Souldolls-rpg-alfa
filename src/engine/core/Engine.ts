@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Terrain } from '../world/Terrain';
 import { Environment } from '../world/Environment';
+import { MapEngine } from '../../map/MapEngine';
 import { Player } from '../entities/Player';
 import { ThirdPersonCamera } from '../camera/ThirdPersonCamera';
 import { InputManager } from '../input/InputManager';
@@ -50,12 +51,13 @@ export class Engine {
   public camera: THREE.PerspectiveCamera;
   public renderer: THREE.WebGLRenderer;
 
-  public terrain: Terrain;
+  public terrain: any;
   public environment: Environment;
+  public map: MapEngine;
   public player: Player;
   public tpCamera: ThirdPersonCamera;
   public input: InputManager;
-  public regionManager: RegionManager;
+  public regionManager?: RegionManager;
   public magicSystem: MagicSystem;
   public questSystem: QuestSystem;
 
@@ -75,6 +77,8 @@ export class Engine {
   private animationFrameId: number | null = null;
   private isDestroyed = false;
   private totalTime = 0;
+  private currentBiomeId: string | null = null;
+  private benchMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('bench');
   private overworldPortalMesh?: THREE.Mesh;
   private overworldPortalLight?: THREE.PointLight;
   private postFx?: PostFxPipeline;
@@ -122,19 +126,29 @@ export class Engine {
     // so external PNGs download in parallel while the scene builds synchronously.
     void spriteLoader.preloadAssets(Object.keys(ASSET_CATALOG));
 
-    this.regionManager = new RegionManager(133742, 70);
-    this.terrain = new Terrain(140, 70);
-    this.scene.add(this.terrain.mesh);
+    // Legacy RegionManager retained only for compatibility/tests; not used in runtime.
 
-    this.environment = new Environment(this.scene, this.terrain);
+    // New map engine (finite, chunked, deterministic)
+    this.map = new MapEngine({ scene: this.scene, masterSeed: 133742, worldSize: 8192 });
+    const worldRoot = this.map.floatingOrigin.worldRoot as any;
+    // Terrain adapter for legacy entities/APIs
+    this.terrain = {
+      getHeightAt: (x: number, z: number) => this.map.getHeightAt(x, z),
+      calculateHeight: (x: number, z: number) => this.map.getHeightAt(x, z),
+      setBiomeGroundColor: () => {},
+      mesh: new THREE.Mesh(),
+      size: 8192,
+    };
 
-    // 5.2 Atmospheric particles (fireflies, campfire embers, soul wisps)
-    this.particles = new EnvironmentParticles(this.scene);
+    this.environment = new Environment(worldRoot, this.terrain);
+
+    // 5.2 Atmospheric particles
+    this.particles = new EnvironmentParticles(worldRoot);
 
     // 5.5 Dungeon Construction
-    this.dungeon = new Dungeon(this.scene, this.terrain);
+    this.dungeon = new Dungeon(worldRoot, this.terrain);
 
-    // Overworld Portal to Dungeon with rotating arcane seal & soul glow
+    // Overworld Portal
     const portalTex = packTextureLoader.getSubTexture('esoteric_arcane_seal');
     const portalGeo = new THREE.CircleGeometry(1.6, 24);
     portalGeo.rotateX(-Math.PI / 2);
@@ -148,13 +162,13 @@ export class Engine {
       roughness: 0.3,
     });
     this.overworldPortalMesh = new THREE.Mesh(portalGeo, portalMat);
-    const portalY = this.terrain.calculateHeight(6, 6) + 0.08;
+    const portalY = this.map.getHeightAt(6, 6) + 0.08;
     this.overworldPortalMesh.position.set(6, portalY, 6);
-    this.scene.add(this.overworldPortalMesh);
+    worldRoot.add(this.overworldPortalMesh);
 
     this.overworldPortalLight = new THREE.PointLight(0x9b6bff, 1.8, 8);
     this.overworldPortalLight.position.set(6, portalY + 0.8, 6);
-    this.scene.add(this.overworldPortalLight);
+    worldRoot.add(this.overworldPortalLight);
     this.environment.obstacles.push({ x: 6, z: 6, radius: 1.0 });
 
     // 6. Magic System & Quest System
@@ -165,15 +179,15 @@ export class Engine {
     };
 
     // 7. Player construction
-    this.player = new Player(this.scene, 0, 0, this.terrain);
+    this.player = new Player(worldRoot, 0, 0, this.terrain);
 
-    // 8. 3D Articulated NPC (Rhogar) near the path
-    this.npc = new NPC(this.scene, 2.5, 2.5, this.terrain);
+    // 8. NPC
+    this.npc = new NPC(worldRoot, 2.5, 2.5, this.terrain);
     this.environment.obstacles.push({ x: 2.5, z: 2.5, radius: 0.8 });
 
-    // 9. 3D Articulated Enemies (Golems / Slimes)
-    this.enemies.push(new Enemy(this.scene, 14, -8, this.terrain));
-    this.enemies.push(new Enemy(this.scene, -6, 16, this.terrain));
+    // 9. Enemies
+    this.enemies.push(new Enemy(worldRoot, 14, -8, this.terrain));
+    this.enemies.push(new Enemy(worldRoot, -6, 16, this.terrain));
 
     // 10. Input binding
     this.input = new InputManager();
@@ -203,10 +217,7 @@ export class Engine {
       if (dist <= attackRange) {
         const defeated = enemy.takeDamage(this.player.attackPower);
         if (defeated) {
-          const cur = this.regionManager.getCurrentRegion();
-          this.regionManager.markRegionModified(cur.coord.rx, cur.coord.rz, {
-            [`enemy_${idx}_defeated`]: true,
-          });
+          // (legacy region tracking removed)
 
           // Update Quest Objective for defeating enemies
           this.questSystem.updateObjective('defeat_enemies', 1);
@@ -273,7 +284,7 @@ export class Engine {
     if (!this.inDungeon && distToPortal <= 2.0) {
       this.inDungeon = true;
       this.dungeon.setVisible(true);
-      this.terrain.mesh.visible = false;
+      this.map.chunks.setVisible(false);
       this.environment.group.visible = false;
       this.npc.mesh.visible = false;
       this.player.position.copy(this.dungeon.entrancePosition);
@@ -291,12 +302,12 @@ export class Engine {
     if (this.inDungeon && distToExit <= 2.5) {
       this.inDungeon = false;
       this.dungeon.setVisible(false);
-      this.terrain.mesh.visible = true;
+      this.map.chunks.setVisible(true);
       this.environment.group.visible = true;
       this.npc.mesh.visible = true;
       this.player.position.set(6, this.terrain.calculateHeight(6, 6), 8);
-      const currentRegion = this.regionManager.getCurrentRegion();
-      const biomeDef = BIOME_DEFINITIONS[currentRegion.biome];
+      const { biomeId } = this.map.update(6, 8);
+      const biomeDef = this.map.biomeField.getBiomeDef(biomeId);
       this.scene.fog = new THREE.FogExp2(biomeDef.fogColor, biomeDef.fogDensity);
       this.scene.background = new THREE.Color(biomeDef.fogColor);
       if (this.onSpellCastMessage) {
@@ -306,7 +317,7 @@ export class Engine {
     }
 
     if (this.npc.isNearPlayer(this.player.position)) {
-      this.regionManager.markRegionModified(0, 0, { npc_talked: true });
+      // (legacy region tracking removed)
 
       // Update talk objective
       this.questSystem.updateObjective('talk_to_npc', 1, 'npc_elder_rhogar');
@@ -437,21 +448,20 @@ export class Engine {
       // 9. Stats update callback to React HUD
       if (this.onStatsUpdate) {
         const livingEnemies = this.enemies.filter((e) => !e.isDead).length;
-        const { changed } = this.regionManager.updatePlayerPosition(
-          this.player.position.x,
-          this.player.position.z
-        );
-        const currentRegion = this.regionManager.getCurrentRegion();
-        const biomeDef = BIOME_DEFINITIONS[currentRegion.biome];
+        const { biomeId, biomeName } = this.map.update(this.player.position.x, this.player.position.z);
+        const biomeDef = this.map.biomeField.getBiomeDef(biomeId);
+        const rx = Math.floor(this.player.position.x / 256);
+        const rz = Math.floor(this.player.position.z / 256);
 
-        if (changed) {
+        if (biomeId !== this.currentBiomeId) {
           this.scene.fog = new THREE.FogExp2(biomeDef.fogColor, biomeDef.fogDensity);
           this.scene.background = new THREE.Color(biomeDef.fogColor);
-          this.terrain.setBiomeGroundColor(biomeDef.groundColor);
+          this.terrain.setBiomeGroundColor(biomeDef.baseColor);
+          this.currentBiomeId = biomeId;
         }
 
         // Update explore region objective
-        this.questSystem.updateObjective('explore_region', 1, `${currentRegion.coord.rx},${currentRegion.coord.rz}`);
+        this.questSystem.updateObjective('explore_region', 1, `${rx},${rz}`);
 
         const targetInfo = nearestEnemy && minEnemyDist <= 12 ? {
           name: (nearestEnemy as Enemy).name,
@@ -471,9 +481,9 @@ export class Engine {
           isMoving: this.player.isMoving,
           nearNpc: this.npc.isNearPlayer(this.player.position),
           enemyCount: livingEnemies,
-          regionName: `${biomeDef.name} [${currentRegion.coord.rx}, ${currentRegion.coord.rz}]`,
-          regionCoord: currentRegion.coord,
-          biomeName: biomeDef.name,
+          regionName: `${biomeName} [${rx}, ${rz}]`,
+          regionCoord: { rx, rz },
+          biomeName: biomeName,
           playerHp: Math.round(this.player.hp),
           playerMaxHp: this.player.maxHp,
           playerMana: Math.round(this.player.mana),
@@ -484,6 +494,12 @@ export class Engine {
           targetInfo,
           quests: this.questSystem.getAllQuests(),
         });
+      }
+
+      // 10. Benchmark logging (optional: ?bench in URL)
+      if (this.benchMode && this.frameCount % 120 === 0) {
+        // eslint-disable-next-line no-console
+        console.log('[bench] fps=', this.currentFps, 'drawCalls=', this.renderer.info.render.calls, 'chunks=', this.map.chunks.getLoadedCount());
       }
 
       // 10. Lighting follow + Post-processed render
